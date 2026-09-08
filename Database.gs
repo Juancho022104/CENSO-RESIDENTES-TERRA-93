@@ -8,7 +8,7 @@
  * Obtiene (o crea) la hoja por nombre.
  */
 function obtenerHoja(nombre) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = obtenerSpreadsheet();
   var hoja = ss.getSheetByName(nombre);
   if (!hoja) {
     hoja = ss.insertSheet(nombre);

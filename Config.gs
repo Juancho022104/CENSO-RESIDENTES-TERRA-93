@@ -75,12 +75,29 @@ var CONFIG = {
 };
 
 /**
+ * Este proyecto es un script independiente (no está atado a un Google Sheet
+ * como contenedor), así que SpreadsheetApp.getActiveSpreadsheet() siempre
+ * devuelve null aquí. La primera vez, crea el spreadsheet del censo y guarda
+ * su ID en las propiedades del script; las siguientes veces lo reabre por ID.
+ */
+function obtenerSpreadsheet() {
+  var propiedades = PropertiesService.getScriptProperties();
+  var idGuardado = propiedades.getProperty('SPREADSHEET_ID');
+  if (idGuardado) {
+    return SpreadsheetApp.openById(idGuardado);
+  }
+  var nuevo = SpreadsheetApp.create(CONFIG.NOMBRE_SPREADSHEET);
+  propiedades.setProperty('SPREADSHEET_ID', nuevo.getId());
+  return nuevo;
+}
+
+/**
  * Crea (si no existen) todas las hojas del sistema con sus encabezados,
  * inicializa la fila de configuración por defecto y las carpetas de Drive.
  * Ejecutar UNA sola vez manualmente desde el editor de Apps Script.
  */
 function inicializarSistema() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = obtenerSpreadsheet();
   var nombresHojas = Object.keys(CONFIG.HOJAS).map(function (k) { return CONFIG.HOJAS[k]; });
 
   nombresHojas.forEach(function (nombre) {
