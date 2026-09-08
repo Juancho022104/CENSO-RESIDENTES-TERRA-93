@@ -1,0 +1,871 @@
+<!doctype html>
+<html>
+<head>
+  <base target="_top">
+  <?!= include('CSS') ?>
+  <title>Censo Integral de Residentes - TERRA 93 PH</title>
+</head>
+<body>
+  <div class="contenedor-app" id="contenedor-app">
+
+    <header class="encabezado-app">
+      <p class="nombre-admin">RAVELL PH</p>
+      <h1>Censo Integral de Residentes</h1>
+      <p class="nombre-copropiedad" id="texto-nombre-copropiedad">EDIFICIO TERRA 93 PH</p>
+      <p class="texto-bienvenida" id="texto-bienvenida">Cargando información de la copropiedad...</p>
+    </header>
+
+    <div class="barra-progreso-contenedor">
+      <div class="barra-progreso-pista">
+        <div class="barra-progreso-relleno" id="barra-progreso-relleno"></div>
+      </div>
+      <div class="indicador-seccion">
+        <span id="texto-seccion-actual">Sección 1 de 17</span>
+        <span id="texto-nombre-seccion-actual">Autorización de datos</span>
+      </div>
+    </div>
+
+    <main class="contenido-censo" id="contenido-censo">
+
+      <div id="zona-mensajes"></div>
+
+      <!-- ============ SECCIÓN 0: AUTORIZACIÓN DE DATOS ============ -->
+      <section class="censo-seccion" data-seccion="0">
+        <h2>Autorización para el tratamiento de datos personales</h2>
+        <p class="subtitulo-seccion">Ley 1581 de 2012 - Protección de datos personales</p>
+
+        <div class="campo">
+          <p id="texto-autorizacion-datos">Cargando texto de autorización...</p>
+        </div>
+
+        <div class="campo">
+          <label>¿Autoriza el tratamiento de sus datos personales y de los residentes que registra?</label>
+          <div class="grupo-radio">
+            <label class="opcion-radio">
+              <input type="radio" name="autoriza-datos" value="si" id="radio-autoriza-si">
+              Sí, autorizo
+            </label>
+            <label class="opcion-radio">
+              <input type="radio" name="autoriza-datos" value="no" id="radio-autoriza-no">
+              No autorizo
+            </label>
+          </div>
+        </div>
+
+        <div class="campo">
+          <label class="opcion-checkbox">
+            <input type="checkbox" id="chk-observaciones-evacuacion">
+            Autorizo además el registro de observaciones relevantes para planes de evacuación y emergencia
+            (ej. condición de movilidad reducida, menores de edad, adultos mayores).
+          </label>
+        </div>
+      </section>
+
+      <!-- ============ SECCIÓN 1: IDENTIFICACIÓN DEL INMUEBLE ============ -->
+      <section class="censo-seccion oculto" data-seccion="1">
+        <h2>Identificación del inmueble</h2>
+        <p class="subtitulo-seccion">Datos generales de su unidad residencial</p>
+
+        <div class="fila-dos-columnas">
+          <div class="campo">
+            <label for="inmueble-bloque">Bloque</label>
+            <input type="text" id="inmueble-bloque" placeholder="Ej. Único">
+          </div>
+          <div class="campo">
+            <label for="inmueble-torre">Torre *</label>
+            <input type="text" id="inmueble-torre" placeholder="Ej. Torre 1">
+          </div>
+        </div>
+
+        <div class="fila-dos-columnas">
+          <div class="campo">
+            <label for="inmueble-apartamento">Apartamento *</label>
+            <input type="text" id="inmueble-apartamento" placeholder="Ej. 502">
+          </div>
+          <div class="campo">
+            <label for="inmueble-piso">Piso</label>
+            <input type="text" id="inmueble-piso" placeholder="Ej. 5">
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="inmueble-tipo-unidad">Tipo de unidad *</label>
+          <select id="inmueble-tipo-unidad">
+            <option value="">Seleccione...</option>
+            <option value="apartamento">Apartamento</option>
+            <option value="apartaestudio">Apartaestudio</option>
+            <option value="local_comercial">Local comercial</option>
+            <option value="oficina">Oficina</option>
+            <option value="deposito">Depósito</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="inmueble-area">Área aproximada (m²)</label>
+          <input type="number" id="inmueble-area" min="0" step="0.01">
+        </div>
+
+        <div class="campo">
+          <label>¿El inmueble está ocupado actualmente?</label>
+          <div class="grupo-radio">
+            <label class="opcion-radio"><input type="radio" name="inmueble-ocupado" value="si" id="radio-ocupado-si"> Sí</label>
+            <label class="opcion-radio"><input type="radio" name="inmueble-ocupado" value="no" id="radio-ocupado-no"> No</label>
+          </div>
+        </div>
+
+        <div class="campo">
+          <label>¿El inmueble está arrendado?</label>
+          <div class="grupo-radio">
+            <label class="opcion-radio"><input type="radio" name="inmueble-arrendado" value="si" id="radio-arrendado-si"> Sí</label>
+            <label class="opcion-radio"><input type="radio" name="inmueble-arrendado" value="no" id="radio-arrendado-no"> No</label>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SECCIÓN 2: PROPIETARIO ============ -->
+      <section class="censo-seccion oculto" data-seccion="2">
+        <h2>Datos del propietario</h2>
+        <p class="subtitulo-seccion">Información de quien figura como propietario del inmueble</p>
+
+        <div class="campo">
+          <label for="propietario-nombre">Nombre completo *</label>
+          <input type="text" id="propietario-nombre">
+        </div>
+
+        <div class="fila-dos-columnas">
+          <div class="campo">
+            <label for="propietario-tipo-documento">Tipo de documento</label>
+            <select id="propietario-tipo-documento">
+              <option value="CC">Cédula de ciudadanía</option>
+              <option value="CE">Cédula de extranjería</option>
+              <option value="PASAPORTE">Pasaporte</option>
+              <option value="NIT">NIT</option>
+              <option value="OTRO">Otro</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label for="propietario-documento">Número de documento *</label>
+            <input type="text" id="propietario-documento">
+          </div>
+        </div>
+
+        <div class="fila-dos-columnas">
+          <div class="campo">
+            <label for="propietario-telefono">Teléfono</label>
+            <input type="tel" id="propietario-telefono" placeholder="Ej. 3001234567">
+          </div>
+          <div class="campo">
+            <label for="propietario-whatsapp">WhatsApp</label>
+            <input type="tel" id="propietario-whatsapp" placeholder="Ej. 3001234567">
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="propietario-correo">Correo electrónico</label>
+          <input type="email" id="propietario-correo">
+        </div>
+
+        <div class="campo">
+          <label>¿El propietario reside en el inmueble?</label>
+          <div class="grupo-radio">
+            <label class="opcion-radio"><input type="radio" name="propietario-reside" value="si" id="radio-prop-reside-si"> Sí</label>
+            <label class="opcion-radio"><input type="radio" name="propietario-reside" value="no" id="radio-prop-reside-no"> No</label>
+          </div>
+        </div>
+
+        <div class="campo">
+          <label>¿Autoriza recibir comunicaciones de la administración?</label>
+          <div class="grupo-radio">
+            <label class="opcion-radio"><input type="radio" name="propietario-comunicaciones" value="si" id="radio-prop-com-si"> Sí</label>
+            <label class="opcion-radio"><input type="radio" name="propietario-comunicaciones" value="no" id="radio-prop-com-no"> No</label>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SECCIÓN 3: RESIDENTE PRINCIPAL ============ -->
+      <section class="censo-seccion oculto" data-seccion="3">
+        <h2>Residente principal</h2>
+        <p class="subtitulo-seccion">Si el propietario no reside en el inmueble, registre aquí a la persona responsable</p>
+
+        <div class="campo">
+          <label class="opcion-checkbox">
+            <input type="checkbox" id="chk-residente-es-propietario">
+            El residente principal es el propietario (ya registrado en la sección anterior)
+          </label>
+        </div>
+
+        <div id="bloque-residente-principal-form">
+          <div class="campo">
+            <label for="residente-principal-nombre">Nombre completo</label>
+            <input type="text" id="residente-principal-nombre">
+          </div>
+
+          <div class="fila-dos-columnas">
+            <div class="campo">
+              <label for="residente-principal-tipo-documento">Tipo de documento</label>
+              <select id="residente-principal-tipo-documento">
+                <option value="CC">Cédula de ciudadanía</option>
+                <option value="CE">Cédula de extranjería</option>
+                <option value="PASAPORTE">Pasaporte</option>
+                <option value="OTRO">Otro</option>
+              </select>
+            </div>
+            <div class="campo">
+              <label for="residente-principal-documento">Número de documento</label>
+              <input type="text" id="residente-principal-documento">
+            </div>
+          </div>
+
+          <div class="fila-dos-columnas">
+            <div class="campo">
+              <label for="residente-principal-telefono">Teléfono</label>
+              <input type="tel" id="residente-principal-telefono">
+            </div>
+            <div class="campo">
+              <label for="residente-principal-whatsapp">WhatsApp</label>
+              <input type="tel" id="residente-principal-whatsapp">
+            </div>
+          </div>
+
+          <div class="campo">
+            <label for="residente-principal-correo">Correo electrónico</label>
+            <input type="email" id="residente-principal-correo">
+          </div>
+
+          <div class="campo">
+            <label for="residente-principal-relacion">Relación con el inmueble</label>
+            <select id="residente-principal-relacion">
+              <option value="">Seleccione...</option>
+              <option value="ARRENDATARIO">Arrendatario</option>
+              <option value="FAMILIAR_PROPIETARIO">Familiar del propietario</option>
+              <option value="COMODATARIO">Comodatario</option>
+              <option value="OTRO">Otro</option>
+            </select>
+          </div>
+
+          <div class="campo">
+            <label for="residente-principal-fecha-ingreso">Fecha de ingreso al inmueble</label>
+            <input type="date" id="residente-principal-fecha-ingreso">
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SECCIÓN 4: COMPOSICIÓN DEL HOGAR ============ -->
+      <section class="censo-seccion oculto" data-seccion="4">
+        <h2>Composición del hogar</h2>
+        <p class="subtitulo-seccion">Información general de quienes habitan la unidad</p>
+
+        <div class="fila-dos-columnas">
+          <div class="campo">
+            <label for="hogar-num-habitantes">Número total de habitantes</label>
+            <input type="number" id="hogar-num-habitantes" min="0">
+          </div>
+          <div class="campo">
+            <label for="hogar-num-adultos">Número de adultos</label>
+            <input type="number" id="hogar-num-adultos" min="0">
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="hogar-num-menores">Número de menores de edad</label>
+          <input type="number" id="hogar-num-menores" min="0">
+        </div>
+
+        <div class="campo">
+          <label>¿Hay adultos mayores de 60 años en el hogar?</label>
+          <div class="grupo-radio">
+            <label class="opcion-radio"><input type="radio" name="hogar-mayores-60" value="si" id="radio-mayores60-si"> Sí</label>
+            <label class="opcion-radio"><input type="radio" name="hogar-mayores-60" value="no" id="radio-mayores60-no"> No</label>
+          </div>
+        </div>
+
+        <div class="campo">
+          <label>¿Existe alguna circunstancia relevante para un plan de evacuación (movilidad reducida, condición médica, etc.)?</label>
+          <div class="grupo-radio">
+            <label class="opcion-radio"><input type="radio" name="hogar-circunstancia-evacuacion" value="si" id="radio-evacuacion-si"> Sí</label>
+            <label class="opcion-radio"><input type="radio" name="hogar-circunstancia-evacuacion" value="no" id="radio-evacuacion-no"> No</label>
+          </div>
+        </div>
+
+        <div class="campo oculto" id="bloque-detalle-evacuacion">
+          <label for="hogar-detalle-evacuacion">Describa brevemente la circunstancia</label>
+          <textarea id="hogar-detalle-evacuacion"></textarea>
+        </div>
+      </section>
+
+      <!-- ============ SECCIÓN 5: OTROS RESIDENTES ============ -->
+      <section class="censo-seccion oculto" data-seccion="5">
+        <h2>Otros residentes</h2>
+        <p class="subtitulo-seccion">Agregue a las demás personas que habitan el inmueble</p>
+
+        <div id="lista-residentes"></div>
+
+        <button type="button" class="boton-agregar" id="boton-agregar-residente">+ Agregar residente</button>
+      </section>
+
+      <!-- ============ SECCIÓN 6: VEHÍCULOS ============ -->
+      <section class="censo-seccion oculto" data-seccion="6">
+        <h2>Vehículos</h2>
+        <p class="subtitulo-seccion">Automóviles, motos y bicicletas eléctricas registradas en el inmueble</p>
+
+        <div id="lista-vehiculos"></div>
+
+        <button type="button" class="boton-agregar" id="boton-agregar-vehiculo">+ Agregar vehículo</button>
+      </section>
+
+      <!-- ============ SECCIÓN 7: BICICLETAS ============ -->
+      <section class="censo-seccion oculto" data-seccion="7">
+        <h2>Bicicletas</h2>
+        <p class="subtitulo-seccion">Bicicletas convencionales (no eléctricas)</p>
+
+        <div class="campo">
+          <label>¿Tiene bicicleta(s) convencional(es)?</label>
+          <div class="grupo-radio">
+            <label class="opcion-radio"><input type="radio" name="bicicletas-tiene" value="si" id="radio-bici-si"> Sí</label>
+            <label class="opcion-radio"><input type="radio" name="bicicletas-tiene" value="no" id="radio-bici-no"> No</label>
+          </div>
+        </div>
+
+        <div id="bloque-detalle-bicicletas" class="oculto">
+          <div class="campo">
+            <label for="bicicletas-cantidad">Cantidad</label>
+            <input type="number" id="bicicletas-cantidad" min="0">
+          </div>
+          <div class="campo">
+            <label>¿Usa el biciletero de la copropiedad?</label>
+            <div class="grupo-radio">
+              <label class="opcion-radio"><input type="radio" name="bicicletas-usa-biciletero" value="si" id="radio-usabici-si"> Sí</label>
+              <label class="opcion-radio"><input type="radio" name="bicicletas-usa-biciletero" value="no" id="radio-usabici-no"> No</label>
+            </div>
+          </div>
+          <div class="campo">
+            <label for="bicicletas-espacio">Espacio asignado (si aplica)</label>
+            <input type="text" id="bicicletas-espacio">
+          </div>
+          <div class="campo">
+            <label for="bicicletas-observaciones">Observaciones</label>
+            <textarea id="bicicletas-observaciones"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SECCIÓN 8: MASCOTAS ============ -->
+      <section class="censo-seccion oculto" data-seccion="8">
+        <h2>Mascotas</h2>
+        <p class="subtitulo-seccion">Registre las mascotas que habitan el inmueble</p>
+
+        <div id="lista-mascotas"></div>
+
+        <button type="button" class="boton-agregar" id="boton-agregar-mascota">+ Agregar mascota</button>
+      </section>
+
+      <!-- ============ SECCIÓN 9: PERSONAS AUTORIZADAS ============ -->
+      <section class="censo-seccion oculto" data-seccion="9">
+        <h2>Personas autorizadas de ingreso</h2>
+        <p class="subtitulo-seccion">Familiares o allegados con autorización recurrente de ingreso</p>
+
+        <div id="lista-autorizados"></div>
+
+        <button type="button" class="boton-agregar" id="boton-agregar-autorizado">+ Agregar persona autorizada</button>
+      </section>
+
+      <!-- ============ SECCIÓN 10: CONTRATISTAS ============ -->
+      <section class="censo-seccion oculto" data-seccion="10">
+        <h2>Contratistas y servicios recurrentes</h2>
+        <p class="subtitulo-seccion">Ej. empleada doméstica, niñera, enfermería, etc.</p>
+
+        <div id="lista-contratistas"></div>
+
+        <button type="button" class="boton-agregar" id="boton-agregar-contratista">+ Agregar contratista</button>
+      </section>
+
+      <!-- ============ SECCIÓN 11: CONTACTO DE EMERGENCIA ============ -->
+      <section class="censo-seccion oculto" data-seccion="11">
+        <h2>Contacto de emergencia</h2>
+        <p class="subtitulo-seccion">Persona a contactar en caso de emergencia</p>
+
+        <div class="campo">
+          <label for="emergencia-nombre">Nombre completo *</label>
+          <input type="text" id="emergencia-nombre">
+        </div>
+        <div class="campo">
+          <label for="emergencia-parentesco">Parentesco / relación</label>
+          <input type="text" id="emergencia-parentesco">
+        </div>
+        <div class="fila-dos-columnas">
+          <div class="campo">
+            <label for="emergencia-telefono-principal">Teléfono principal *</label>
+            <input type="tel" id="emergencia-telefono-principal">
+          </div>
+          <div class="campo">
+            <label for="emergencia-telefono-alternativo">Teléfono alternativo</label>
+            <input type="tel" id="emergencia-telefono-alternativo">
+          </div>
+        </div>
+        <div class="campo">
+          <label for="emergencia-ciudad">Ciudad</label>
+          <input type="text" id="emergencia-ciudad">
+        </div>
+      </section>
+
+      <!-- ============ SECCIÓN 12: ARRENDAMIENTO ============ -->
+      <section class="censo-seccion oculto" data-seccion="12">
+        <h2>Datos del arrendamiento</h2>
+        <p class="subtitulo-seccion">Solo aplica si el inmueble se encuentra arrendado</p>
+
+        <div class="campo">
+          <label for="arrendamiento-nombre">Nombre del arrendatario</label>
+          <input type="text" id="arrendamiento-nombre">
+        </div>
+        <div class="fila-dos-columnas">
+          <div class="campo">
+            <label for="arrendamiento-telefono">Teléfono</label>
+            <input type="tel" id="arrendamiento-telefono">
+          </div>
+          <div class="campo">
+            <label for="arrendamiento-correo">Correo</label>
+            <input type="email" id="arrendamiento-correo">
+          </div>
+        </div>
+        <div class="fila-dos-columnas">
+          <div class="campo">
+            <label for="arrendamiento-fecha-inicio">Fecha inicio contrato</label>
+            <input type="date" id="arrendamiento-fecha-inicio">
+          </div>
+          <div class="campo">
+            <label for="arrendamiento-fecha-fin">Fecha fin contrato</label>
+            <input type="date" id="arrendamiento-fecha-fin">
+          </div>
+        </div>
+        <div class="campo">
+          <label>¿Gestionado por inmobiliaria?</label>
+          <div class="grupo-radio">
+            <label class="opcion-radio"><input type="radio" name="arrendamiento-inmobiliaria" value="si" id="radio-inmob-si"> Sí</label>
+            <label class="opcion-radio"><input type="radio" name="arrendamiento-inmobiliaria" value="no" id="radio-inmob-no"> No</label>
+          </div>
+        </div>
+        <div class="campo oculto" id="bloque-nombre-inmobiliaria">
+          <label for="arrendamiento-nombre-inmobiliaria">Nombre de la inmobiliaria</label>
+          <input type="text" id="arrendamiento-nombre-inmobiliaria">
+        </div>
+      </section>
+
+      <!-- ============ SECCIÓN 13: DEPÓSITO ============ -->
+      <section class="censo-seccion oculto" data-seccion="13">
+        <h2>Depósito o cuarto útil</h2>
+        <p class="subtitulo-seccion">Registre si su unidad cuenta con depósito asignado</p>
+
+        <div class="campo">
+          <label>¿Tiene depósito asignado?</label>
+          <div class="grupo-radio">
+            <label class="opcion-radio"><input type="radio" name="deposito-tiene" value="si" id="radio-deposito-si"> Sí</label>
+            <label class="opcion-radio"><input type="radio" name="deposito-tiene" value="no" id="radio-deposito-no"> No</label>
+          </div>
+        </div>
+
+        <div id="bloque-detalle-deposito" class="oculto">
+          <div class="campo">
+            <label for="deposito-numero">Número de depósito</label>
+            <input type="text" id="deposito-numero">
+          </div>
+          <div class="campo">
+            <label for="deposito-ubicacion">Ubicación</label>
+            <input type="text" id="deposito-ubicacion">
+          </div>
+          <div class="campo">
+            <label for="deposito-observaciones">Observaciones</label>
+            <textarea id="deposito-observaciones"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SECCIÓN 14: COMUNICACIONES ============ -->
+      <section class="censo-seccion oculto" data-seccion="14">
+        <h2>Preferencias de comunicación</h2>
+        <p class="subtitulo-seccion">¿Cómo prefiere que la administración se comunique con usted?</p>
+
+        <div class="campo">
+          <label>Medios habilitados</label>
+          <div class="grupo-checkbox">
+            <label class="opcion-checkbox"><input type="checkbox" id="chk-com-whatsapp"> WhatsApp</label>
+            <label class="opcion-checkbox"><input type="checkbox" id="chk-com-correo"> Correo electrónico</label>
+            <label class="opcion-checkbox"><input type="checkbox" id="chk-com-llamada"> Llamada telefónica</label>
+          </div>
+        </div>
+
+        <div class="campo">
+          <label>Tipo de información que desea recibir</label>
+          <div class="grupo-checkbox">
+            <label class="opcion-checkbox"><input type="checkbox" id="chk-info-administrativa" value="ADMINISTRATIVA"> Administrativa</label>
+            <label class="opcion-checkbox"><input type="checkbox" id="chk-info-seguridad" value="SEGURIDAD"> Seguridad</label>
+            <label class="opcion-checkbox"><input type="checkbox" id="chk-info-eventos" value="EVENTOS"> Eventos y convivencia</label>
+            <label class="opcion-checkbox"><input type="checkbox" id="chk-info-emergencias" value="EMERGENCIAS"> Emergencias</label>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SECCIÓN 15: ENCUESTA DE PERCEPCIÓN ============ -->
+      <section class="censo-seccion oculto" data-seccion="15">
+        <h2>Encuesta de percepción</h2>
+        <p class="subtitulo-seccion">Su opinión nos ayuda a mejorar la gestión de la copropiedad (1 = muy bajo, 5 = muy alto)</p>
+
+        <div class="campo">
+          <label for="encuesta-administracion">Calidad de la administración</label>
+          <select id="encuesta-administracion">
+            <option value="">Seleccione...</option>
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="encuesta-seguridad">Seguridad</label>
+          <select id="encuesta-seguridad">
+            <option value="">Seleccione...</option>
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="encuesta-aseo">Aseo y zonas comunes</label>
+          <select id="encuesta-aseo">
+            <option value="">Seleccione...</option>
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="encuesta-mantenimiento">Mantenimiento</label>
+          <select id="encuesta-mantenimiento">
+            <option value="">Seleccione...</option>
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="encuesta-comunicacion">Comunicación de la administración</label>
+          <select id="encuesta-comunicacion">
+            <option value="">Seleccione...</option>
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option>
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="encuesta-problema-principal">¿Cuál considera el principal problema de la copropiedad?</label>
+          <textarea id="encuesta-problema-principal"></textarea>
+        </div>
+        <div class="campo">
+          <label for="encuesta-propuesta">¿Tiene alguna propuesta de mejora?</label>
+          <textarea id="encuesta-propuesta"></textarea>
+        </div>
+        <div class="campo">
+          <label for="encuesta-servicio-adicional">¿Qué servicio adicional le gustaría que ofreciera la copropiedad?</label>
+          <textarea id="encuesta-servicio-adicional"></textarea>
+        </div>
+        <div class="campo">
+          <label for="encuesta-observaciones">Observaciones generales</label>
+          <textarea id="encuesta-observaciones"></textarea>
+        </div>
+      </section>
+
+      <!-- ============ SECCIÓN 16: CONFIRMACIÓN ============ -->
+      <section class="censo-seccion oculto" data-seccion="16">
+        <h2>Confirmación del registro</h2>
+        <p class="subtitulo-seccion">Revise la información antes de finalizar</p>
+
+        <div id="resumen-censo">
+          <div class="bloque-resumen">
+            <h3>Inmueble</h3>
+            <p id="resumen-inmueble-linea1">-</p>
+            <p id="resumen-inmueble-linea2">-</p>
+          </div>
+          <div class="bloque-resumen">
+            <h3>Propietario</h3>
+            <p id="resumen-propietario-linea1">-</p>
+            <p id="resumen-propietario-linea2">-</p>
+          </div>
+          <div class="bloque-resumen">
+            <h3>Residente principal</h3>
+            <p id="resumen-residente-linea1">-</p>
+          </div>
+          <div class="bloque-resumen">
+            <h3>Hogar</h3>
+            <p id="resumen-hogar-linea1">-</p>
+          </div>
+          <div class="bloque-resumen">
+            <h3>Otros residentes</h3>
+            <p id="resumen-otros-residentes">-</p>
+          </div>
+          <div class="bloque-resumen">
+            <h3>Vehículos</h3>
+            <p id="resumen-vehiculos">-</p>
+          </div>
+          <div class="bloque-resumen">
+            <h3>Mascotas</h3>
+            <p id="resumen-mascotas">-</p>
+          </div>
+          <div class="bloque-resumen">
+            <h3>Contacto de emergencia</h3>
+            <p id="resumen-emergencia">-</p>
+          </div>
+          <div class="bloque-resumen" id="bloque-resumen-advertencia">
+          </div>
+        </div>
+
+        <div class="campo" style="margin-top:16px;">
+          <label class="opcion-checkbox">
+            <input type="checkbox" id="chk-confirmacion-datos-correctos">
+            Confirmo que la información registrada es correcta y veraz.
+          </label>
+        </div>
+        <div class="campo">
+          <label class="opcion-checkbox">
+            <input type="checkbox" id="chk-confirmacion-autorizacion-contacto">
+            Autorizo a la administración a contactarme para validar o ampliar esta información si es necesario.
+          </label>
+        </div>
+      </section>
+
+    </main>
+
+    <div class="barra-navegacion" id="barra-navegacion">
+      <button type="button" class="boton boton-secundario" id="boton-anterior">Anterior</button>
+      <button type="button" class="boton boton-texto" id="boton-guardar-despues">Guardar y continuar después</button>
+      <button type="button" class="boton boton-primario" id="boton-continuar">Continuar</button>
+      <button type="button" class="boton boton-primario oculto" id="boton-finalizar">Finalizar</button>
+    </div>
+
+  </div>
+
+  <!-- ============ PANTALLA DE ÉXITO ============ -->
+  <div id="pantalla-exito" class="oculto">
+    <div class="icono-exito">&#10003;</div>
+    <h2>¡Registro completado!</h2>
+    <p>Gracias por diligenciar el censo de TERRA 93 PH. Su información ha sido registrada exitosamente.</p>
+    <div class="codigo-censo" id="texto-codigo-censo">CENSO-000000</div>
+    <p style="font-size:12px;color:var(--color-texto-suave);">Conserve este código como referencia de su registro.</p>
+  </div>
+
+  <!-- ============ CAPA DE CARGA ============ -->
+  <div class="capa-carga oculto" id="capa-carga">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- ============ TEMPLATES PARA TARJETAS DINÁMICAS ============ -->
+
+  <template id="tarjeta-residente">
+    <div class="tarjeta-item" data-tipo="residente">
+      <div class="encabezado-tarjeta">
+        <strong class="titulo-tarjeta">Residente</strong>
+        <button type="button" class="boton-eliminar-tarjeta">Eliminar</button>
+      </div>
+      <div class="campo">
+        <label>Nombre completo</label>
+        <input type="text" class="campo-nombre">
+      </div>
+      <div class="campo">
+        <label>Relación con el propietario/residente principal</label>
+        <input type="text" class="campo-relacion" placeholder="Ej. Hijo(a), cónyuge, hermano(a)">
+      </div>
+      <div class="fila-dos-columnas">
+        <div class="campo">
+          <label>Teléfono</label>
+          <input type="tel" class="campo-telefono">
+        </div>
+        <div class="campo">
+          <label>Correo</label>
+          <input type="email" class="campo-correo">
+        </div>
+      </div>
+      <div class="campo">
+        <label class="opcion-checkbox">
+          <input type="checkbox" class="campo-es-menor">
+          Es menor de edad
+        </label>
+      </div>
+    </div>
+  </template>
+
+  <template id="tarjeta-vehiculo">
+    <div class="tarjeta-item" data-tipo="vehiculo">
+      <div class="encabezado-tarjeta">
+        <strong class="titulo-tarjeta">Vehículo</strong>
+        <button type="button" class="boton-eliminar-tarjeta">Eliminar</button>
+      </div>
+      <div class="campo">
+        <label>Tipo de vehículo</label>
+        <select class="campo-tipo-vehiculo">
+          <option value="">Seleccione...</option>
+          <option value="automovil">Automóvil</option>
+          <option value="moto">Moto</option>
+          <option value="camioneta">Camioneta</option>
+          <option value="bicicleta_electrica">Bicicleta eléctrica</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div class="fila-dos-columnas">
+        <div class="campo">
+          <label>Placa</label>
+          <input type="text" class="campo-placa" placeholder="Ej. ABC123">
+        </div>
+        <div class="campo">
+          <label>Marca</label>
+          <input type="text" class="campo-marca">
+        </div>
+      </div>
+      <div class="fila-dos-columnas">
+        <div class="campo">
+          <label>Línea</label>
+          <input type="text" class="campo-linea">
+        </div>
+        <div class="campo">
+          <label>Color</label>
+          <input type="text" class="campo-color">
+        </div>
+      </div>
+      <div class="fila-dos-columnas">
+        <div class="campo">
+          <label>Modelo (año)</label>
+          <input type="text" class="campo-modelo">
+        </div>
+        <div class="campo">
+          <label>Parqueadero asignado</label>
+          <input type="text" class="campo-parqueadero">
+        </div>
+      </div>
+      <div class="campo">
+        <label class="opcion-checkbox">
+          <input type="checkbox" class="campo-es-electrico">
+          Es eléctrico
+        </label>
+      </div>
+      <div class="campo">
+        <label>Responsable del vehículo</label>
+        <input type="text" class="campo-responsable" placeholder="Nombre del residente responsable">
+      </div>
+    </div>
+  </template>
+
+  <template id="tarjeta-mascota">
+    <div class="tarjeta-item" data-tipo="mascota">
+      <div class="encabezado-tarjeta">
+        <strong class="titulo-tarjeta">Mascota</strong>
+        <button type="button" class="boton-eliminar-tarjeta">Eliminar</button>
+      </div>
+      <div class="campo">
+        <label>Nombre</label>
+        <input type="text" class="campo-nombre">
+      </div>
+      <div class="fila-dos-columnas">
+        <div class="campo">
+          <label>Especie</label>
+          <select class="campo-especie">
+            <option value="">Seleccione...</option>
+            <option value="perro">Perro</option>
+            <option value="gato">Gato</option>
+            <option value="ave">Ave</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label>Raza</label>
+          <input type="text" class="campo-raza">
+        </div>
+      </div>
+      <div class="fila-dos-columnas">
+        <div class="campo">
+          <label>Sexo</label>
+          <select class="campo-sexo">
+            <option value="">Seleccione...</option>
+            <option value="macho">Macho</option>
+            <option value="hembra">Hembra</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label>Edad aproximada</label>
+          <input type="text" class="campo-edad" placeholder="Ej. 2 años">
+        </div>
+      </div>
+      <div class="campo">
+        <label>Responsable de la mascota</label>
+        <input type="text" class="campo-responsable">
+      </div>
+      <div class="campo">
+        <label>Documento (carné de vacunas, etc. - máx 5MB)</label>
+        <input type="file" class="campo-documento" accept="image/*,.pdf">
+        <p class="ayuda-campo campo-estado-archivo"></p>
+      </div>
+    </div>
+  </template>
+
+  <template id="tarjeta-autorizado">
+    <div class="tarjeta-item" data-tipo="autorizado">
+      <div class="encabezado-tarjeta">
+        <strong class="titulo-tarjeta">Persona autorizada</strong>
+        <button type="button" class="boton-eliminar-tarjeta">Eliminar</button>
+      </div>
+      <div class="campo">
+        <label>Nombre completo</label>
+        <input type="text" class="campo-nombre">
+      </div>
+      <div class="campo">
+        <label>Tipo de persona</label>
+        <select class="campo-tipo-persona">
+          <option value="">Seleccione...</option>
+          <option value="FAMILIAR">Familiar</option>
+          <option value="AMIGO">Amigo(a)</option>
+          <option value="DOMESTICO">Servicio doméstico</option>
+          <option value="OTRO">Otro</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label>Teléfono</label>
+        <input type="tel" class="campo-telefono">
+      </div>
+      <div class="campo">
+        <label>Días habituales de ingreso</label>
+        <input type="text" class="campo-dias-ingreso" placeholder="Ej. Fines de semana">
+      </div>
+      <div class="campo">
+        <label>Horario de referencia</label>
+        <input type="text" class="campo-horario" placeholder="Ej. 8am - 6pm">
+      </div>
+    </div>
+  </template>
+
+  <template id="tarjeta-contratista">
+    <div class="tarjeta-item" data-tipo="contratista">
+      <div class="encabezado-tarjeta">
+        <strong class="titulo-tarjeta">Contratista</strong>
+        <button type="button" class="boton-eliminar-tarjeta">Eliminar</button>
+      </div>
+      <div class="campo">
+        <label>Nombre de la persona o empresa</label>
+        <input type="text" class="campo-nombre">
+      </div>
+      <div class="campo">
+        <label>Tipo de servicio</label>
+        <input type="text" class="campo-tipo-servicio" placeholder="Ej. Empleada doméstica, niñera, enfermería">
+      </div>
+      <div class="campo">
+        <label>Frecuencia</label>
+        <select class="campo-frecuencia">
+          <option value="">Seleccione...</option>
+          <option value="DIARIA">Diaria</option>
+          <option value="SEMANAL">Semanal</option>
+          <option value="QUINCENAL">Quincenal</option>
+          <option value="MENSUAL">Mensual</option>
+          <option value="OCASIONAL">Ocasional</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label>Teléfono</label>
+        <input type="tel" class="campo-telefono">
+      </div>
+    </div>
+  </template>
+
+  <?!= include('JavaScript') ?>
+</body>
+</html>

@@ -1,0 +1,404 @@
+<style>
+  :root {
+    --color-principal: #0B3D2E;
+    --color-principal-claro: #145C43;
+    --color-acento: #C9A227;
+    --color-fondo: #F5F6F5;
+    --color-tarjeta: #FFFFFF;
+    --color-texto: #1F2A24;
+    --color-texto-suave: #5B6660;
+    --color-borde: #E1E4E1;
+    --color-error: #B3261E;
+    --color-exito: #1E7A4A;
+    --radio: 10px;
+    --sombra: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+    --fuente: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--color-fondo);
+    color: var(--color-texto);
+    font-family: var(--fuente);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .oculto { display: none !important; }
+
+  .contenedor-app {
+    max-width: 640px;
+    margin: 0 auto;
+    padding-bottom: 96px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Encabezado */
+  header.encabezado-app {
+    background: var(--color-principal);
+    color: #fff;
+    padding: 20px 20px 16px;
+  }
+
+  header.encabezado-app .nombre-admin {
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.85;
+    margin: 0 0 4px;
+  }
+
+  header.encabezado-app h1 {
+    font-size: 20px;
+    margin: 0 0 2px;
+    font-weight: 700;
+  }
+
+  header.encabezado-app .nombre-copropiedad {
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    opacity: 0.9;
+    margin: 0;
+  }
+
+  .texto-bienvenida {
+    font-size: 13px;
+    margin-top: 10px;
+    opacity: 0.92;
+  }
+
+  /* Barra de progreso */
+  .barra-progreso-contenedor {
+    padding: 14px 20px 8px;
+    background: var(--color-tarjeta);
+    border-bottom: 1px solid var(--color-borde);
+  }
+
+  .barra-progreso-pista {
+    background: var(--color-borde);
+    border-radius: 999px;
+    height: 8px;
+    overflow: hidden;
+  }
+
+  .barra-progreso-relleno {
+    background: var(--color-principal-claro);
+    height: 100%;
+    width: 0%;
+    transition: width 0.25s ease;
+  }
+
+  .indicador-seccion {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--color-texto-suave);
+    margin-top: 6px;
+  }
+
+  /* Secciones del formulario */
+  main.contenido-censo {
+    flex: 1;
+    padding: 16px;
+  }
+
+  section.censo-seccion {
+    background: var(--color-tarjeta);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+    padding: 18px 16px;
+    margin-bottom: 12px;
+  }
+
+  section.censo-seccion h2 {
+    font-size: 17px;
+    margin: 0 0 4px;
+    color: var(--color-principal);
+  }
+
+  section.censo-seccion .subtitulo-seccion {
+    font-size: 13px;
+    color: var(--color-texto-suave);
+    margin: 0 0 16px;
+  }
+
+  .campo {
+    margin-bottom: 14px;
+  }
+
+  .campo label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: var(--color-texto);
+  }
+
+  .campo .ayuda-campo {
+    font-size: 12px;
+    color: var(--color-texto-suave);
+    margin-top: 4px;
+  }
+
+  input[type="text"], input[type="email"], input[type="tel"],
+  input[type="number"], input[type="date"], input[type="file"],
+  select, textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--color-borde);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--color-texto);
+    font-family: var(--fuente);
+    font-size: 14px;
+  }
+
+  textarea { min-height: 80px; resize: vertical; }
+
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--color-principal-claro);
+    box-shadow: 0 0 0 3px rgba(20,92,67,0.15);
+  }
+
+  .fila-dos-columnas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .grupo-radio, .grupo-checkbox {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .opcion-radio, .opcion-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+  }
+
+  .opcion-radio input, .opcion-checkbox input {
+    width: auto;
+  }
+
+  /* Tarjetas dinámicas (residentes, vehículos, mascotas...) */
+  .tarjeta-item {
+    border: 1px solid var(--color-borde);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 12px;
+    position: relative;
+    background: #FAFBFA;
+  }
+
+  .tarjeta-item .encabezado-tarjeta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .tarjeta-item .encabezado-tarjeta strong {
+    font-size: 13px;
+    color: var(--color-principal);
+  }
+
+  .boton-eliminar-tarjeta {
+    background: none;
+    border: none;
+    color: var(--color-error);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+
+  .boton-agregar {
+    background: #fff;
+    border: 1.5px dashed var(--color-principal-claro);
+    color: var(--color-principal-claro);
+    border-radius: 8px;
+    padding: 10px;
+    width: 100%;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .boton-agregar:active { background: #EFF5F1; }
+
+  /* Botones de navegación */
+  .barra-navegacion {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--color-tarjeta);
+    border-top: 1px solid var(--color-borde);
+    padding: 10px 16px;
+    display: flex;
+    gap: 10px;
+    max-width: 640px;
+    margin: 0 auto;
+    z-index: 20;
+  }
+
+  .boton {
+    flex: 1;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--fuente);
+  }
+
+  .boton-primario {
+    background: var(--color-principal);
+    color: #fff;
+  }
+
+  .boton-primario:active { background: var(--color-principal-claro); }
+
+  .boton-secundario {
+    background: #fff;
+    color: var(--color-principal);
+    border: 1px solid var(--color-principal);
+  }
+
+  .boton-texto {
+    background: none;
+    color: var(--color-texto-suave);
+    border: none;
+    flex: none;
+    font-size: 12px;
+    text-decoration: underline;
+    padding: 12px 4px;
+  }
+
+  .boton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Mensajes */
+  .mensaje-error {
+    background: #FDECEA;
+    color: var(--color-error);
+    border: 1px solid #F5C6C2;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+
+  .mensaje-advertencia {
+    background: #FFF7E0;
+    color: #7A5B00;
+    border: 1px solid #F0DFA0;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+
+  /* Resumen (sección 16) */
+  .bloque-resumen {
+    border-bottom: 1px solid var(--color-borde);
+    padding: 10px 0;
+  }
+
+  .bloque-resumen h3 {
+    font-size: 13px;
+    color: var(--color-principal);
+    margin: 0 0 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .bloque-resumen p {
+    font-size: 13px;
+    margin: 2px 0;
+    color: var(--color-texto-suave);
+  }
+
+  /* Pantalla de éxito */
+  #pantalla-exito {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 100vh;
+    padding: 32px;
+    background: var(--color-fondo);
+  }
+
+  #pantalla-exito .icono-exito {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--color-exito);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    margin-bottom: 16px;
+  }
+
+  #pantalla-exito h2 {
+    color: var(--color-principal);
+    margin: 0 0 8px;
+  }
+
+  #pantalla-exito .codigo-censo {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-principal-claro);
+    background: #fff;
+    border: 1px solid var(--color-borde);
+    border-radius: 8px;
+    padding: 10px 20px;
+    margin: 14px 0;
+  }
+
+  /* Spinner de carga */
+  .capa-carga {
+    position: fixed;
+    inset: 0;
+    background: rgba(11,61,46,0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+  }
+
+  .spinner {
+    width: 42px;
+    height: 42px;
+    border: 4px solid rgba(255,255,255,0.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: girar 0.8s linear infinite;
+  }
+
+  @keyframes girar {
+    to { transform: rotate(360deg); }
+  }
+
+  @media (max-width: 420px) {
+    .fila-dos-columnas { grid-template-columns: 1fr; }
+    header.encabezado-app { padding: 16px 14px 14px; }
+    main.contenido-censo { padding: 12px; }
+  }
+</style>

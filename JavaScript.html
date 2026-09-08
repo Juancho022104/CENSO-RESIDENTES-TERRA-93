@@ -1,0 +1,740 @@
+<script>
+  /**
+   * JavaScript.html - Lógica de cliente del Censo Integral de Residentes.
+   *
+   * Decisión de diseño (subida de documentos de mascotas):
+   * El archivo se convierte a base64 en el navegador y se guarda EN MEMORIA junto
+   * con los datos de la mascota (estadoCenso.mascotas[i].documentoBase64). Todo viaja
+   * junto en el payload final de guardarCenso(), que en el servidor sube el archivo a
+   * Drive ya con el ID de unidad disponible. Se eligió esto en vez de una llamada
+   * separada a guardarDocumentoDrive() porque la unidad todavía no existe mientras
+   * el usuario diligencia el formulario, y así se evita crear carpetas huérfanas.
+   *
+   * Regla no negociable: ninguna sección se construye con innerHTML; todo el HTML de
+   * las 17 secciones ya existe en Index.html y aquí solo se muestra/oculta o se clonan
+   * <template> para tarjetas repetibles (residentes, vehículos, mascotas, autorizados,
+   * contratistas).
+   */
+
+  var TOTAL_SECCIONES = 17;
+  var CLAVE_BORRADOR_LOCAL = 'censoTerra93_borrador';
+  var TAMANO_MAXIMO_ARCHIVO = 5 * 1024 * 1024; // 5MB
+
+  var NOMBRES_SECCION = [
+    'Autorización de datos', 'Identificación del inmueble', 'Propietario', 'Residente principal',
+    'Composición del hogar', 'Otros residentes', 'Vehículos', 'Bicicletas', 'Mascotas',
+    'Personas autorizadas', 'Contratistas', 'Contacto de emergencia', 'Arrendamiento',
+    'Depósito', 'Comunicaciones', 'Encuesta de percepción', 'Confirmación'
+  ];
+
+  // Estado del formulario en memoria. Las listas dinámicas (residentes, vehículos, ...)
+  // se leen directamente del DOM al enviar, no se duplican aquí salvo para autoguardado.
+  var estadoCenso = {
+    seccionActual: 0,
+    configuracion: {},
+    seccionesDeshabilitadas: []
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    inicializarNavegacion();
+    inicializarListasDinamicas();
+    inicializarLogicaCondicional();
+    cargarBorradorLocal();
+    cargarConfiguracionServidor();
+    mostrarSeccion(0);
+  });
+
+  // ---------------------------------------------------------------------
+  // Configuración desde el servidor
+  // ---------------------------------------------------------------------
+
+  function cargarConfiguracionServidor() {
+    google.script.run
+      .withSuccessHandler(aplicarConfiguracion)
+      .withFailureHandler(function () {
+        // Si falla, se continúa con los valores por defecto ya presentes en el HTML.
+      })
+      .obtenerConfiguracion();
+  }
+
+  function aplicarConfiguracion(config) {
+    estadoCenso.configuracion = config || {};
+
+    if (config.NOMBRE_COPROPIEDAD) {
+      document.getElementById('texto-nombre-copropiedad').textContent = 'EDIFICIO ' + config.NOMBRE_COPROPIEDAD;
+    }
+    if (config.TEXTO_BIENVENIDA) {
+      document.getElementById('texto-bienvenida').textContent = config.TEXTO_BIENVENIDA;
+    }
+    if (config.TEXTO_AUTORIZACION_DATOS) {
+      document.getElementById('texto-autorizacion-datos').textContent = config.TEXTO_AUTORIZACION_DATOS;
+    }
+    if (config.COLOR_PRINCIPAL) {
+      document.documentElement.style.setProperty('--color-principal', config.COLOR_PRINCIPAL);
+    }
+
+    var deshabilitadas = [];
+    if (config.HABILITAR_VEHICULOS === 'false') deshabilitadas.push(6);
+    if (config.HABILITAR_BICICLETAS === 'false') deshabilitadas.push(7);
+    if (config.HABILITAR_MASCOTAS === 'false') deshabilitadas.push(8);
+    if (config.HABILITAR_ENCUESTA === 'false') deshabilitadas.push(15);
+    if (config.HABILITAR_DOCUMENTOS === 'false') {
+      var camposArchivo = document.querySelectorAll('.campo-documento');
+      camposArchivo.forEach(function (input) { input.closest('.campo').classList.add('oculto'); });
+    }
+    estadoCenso.seccionesDeshabilitadas = deshabilitadas;
+  }
+
+  // ---------------------------------------------------------------------
+  // Navegación entre secciones
+  // ---------------------------------------------------------------------
+
+  function inicializarNavegacion() {
+    document.getElementById('boton-continuar').addEventListener('click', function () {
+      if (validarSeccionActual()) {
+        avanzarSeccion();
+      }
+    });
+    document.getElementById('boton-anterior').addEventListener('click', retrocederSeccion);
+    document.getElementById('boton-guardar-despues').addEventListener('click', function () {
+      guardarBorradorLocal();
+      mostrarMensaje('Su progreso fue guardado en este dispositivo. Puede continuar más tarde desde el mismo navegador.', 'advertencia');
+    });
+    document.getElementById('boton-finalizar').addEventListener('click', finalizarCenso);
+  }
+
+  function siguienteSeccionHabilitada(desde, direccion) {
+    var siguiente = desde + direccion;
+    while (siguiente >= 0 && siguiente < TOTAL_SECCIONES && estadoCenso.seccionesDeshabilitadas.indexOf(siguiente) !== -1) {
+      siguiente += direccion;
+    }
+    return siguiente;
+  }
+
+  function avanzarSeccion() {
+    if (estadoCenso.seccionActual === 16) return;
+    var siguiente = siguienteSeccionHabilitada(estadoCenso.seccionActual, 1);
+    if (siguiente < TOTAL_SECCIONES) {
+      mostrarSeccion(siguiente);
+    }
+  }
+
+  function retrocederSeccion() {
+    if (estadoCenso.seccionActual === 0) return;
+    var anterior = siguienteSeccionHabilitada(estadoCenso.seccionActual, -1);
+    if (anterior >= 0) {
+      mostrarSeccion(anterior);
+    }
+  }
+
+  function mostrarSeccion(indice) {
+    document.querySelectorAll('.censo-seccion').forEach(function (seccion) {
+      seccion.classList.add('oculto');
+    });
+    var seccionObjetivo = document.querySelector('.censo-seccion[data-seccion="' + indice + '"]');
+    if (seccionObjetivo) {
+      seccionObjetivo.classList.remove('oculto');
+    }
+    estadoCenso.seccionActual = indice;
+    limpiarMensajes();
+    actualizarBarraProgreso();
+    actualizarBotonesNavegacion();
+    if (indice === 16) {
+      construirResumen();
+    }
+    window.scrollTo(0, 0);
+  }
+
+  function actualizarBarraProgreso() {
+    var porcentaje = Math.round(((estadoCenso.seccionActual + 1) / TOTAL_SECCIONES) * 100);
+    document.getElementById('barra-progreso-relleno').style.width = porcentaje + '%';
+    document.getElementById('texto-seccion-actual').textContent =
+      'Sección ' + (estadoCenso.seccionActual + 1) + ' de ' + TOTAL_SECCIONES;
+    document.getElementById('texto-nombre-seccion-actual').textContent =
+      NOMBRES_SECCION[estadoCenso.seccionActual] || '';
+  }
+
+  function actualizarBotonesNavegacion() {
+    var botonAnterior = document.getElementById('boton-anterior');
+    var botonContinuar = document.getElementById('boton-continuar');
+    var botonFinalizar = document.getElementById('boton-finalizar');
+
+    botonAnterior.disabled = estadoCenso.seccionActual === 0;
+
+    if (estadoCenso.seccionActual === 16) {
+      botonContinuar.classList.add('oculto');
+      botonFinalizar.classList.remove('oculto');
+    } else {
+      botonContinuar.classList.remove('oculto');
+      botonFinalizar.classList.add('oculto');
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // Lógica condicional entre secciones
+  // ---------------------------------------------------------------------
+
+  function inicializarLogicaCondicional() {
+    // Residente principal = propietario
+    document.getElementById('chk-residente-es-propietario').addEventListener('change', function (e) {
+      document.getElementById('bloque-residente-principal-form').classList.toggle('oculto', e.target.checked);
+    });
+
+    // Circunstancia de evacuación -> textarea condicional
+    document.querySelectorAll('input[name="hogar-circunstancia-evacuacion"]').forEach(function (radio) {
+      radio.addEventListener('change', function () {
+        var muestra = document.getElementById('radio-evacuacion-si').checked;
+        document.getElementById('bloque-detalle-evacuacion').classList.toggle('oculto', !muestra);
+      });
+    });
+
+    // Bicicletas sí/no
+    document.querySelectorAll('input[name="bicicletas-tiene"]').forEach(function (radio) {
+      radio.addEventListener('change', function () {
+        var muestra = document.getElementById('radio-bici-si').checked;
+        document.getElementById('bloque-detalle-bicicletas').classList.toggle('oculto', !muestra);
+      });
+    });
+
+    // Depósito sí/no
+    document.querySelectorAll('input[name="deposito-tiene"]').forEach(function (radio) {
+      radio.addEventListener('change', function () {
+        var muestra = document.getElementById('radio-deposito-si').checked;
+        document.getElementById('bloque-detalle-deposito').classList.toggle('oculto', !muestra);
+      });
+    });
+
+    // Arrendamiento -> gestionado por inmobiliaria
+    document.querySelectorAll('input[name="arrendamiento-inmobiliaria"]').forEach(function (radio) {
+      radio.addEventListener('change', function () {
+        var muestra = document.getElementById('radio-inmob-si').checked;
+        document.getElementById('bloque-nombre-inmobiliaria').classList.toggle('oculto', !muestra);
+      });
+    });
+
+    // Si el inmueble no está arrendado, la sección 12 (arrendamiento) se salta.
+    document.querySelectorAll('input[name="inmueble-arrendado"]').forEach(function (radio) {
+      radio.addEventListener('change', function () {
+        var arrendado = document.getElementById('radio-arrendado-si').checked;
+        var indice = estadoCenso.seccionesDeshabilitadas.indexOf(12);
+        if (!arrendado && indice === -1) {
+          estadoCenso.seccionesDeshabilitadas.push(12);
+        } else if (arrendado && indice !== -1) {
+          estadoCenso.seccionesDeshabilitadas.splice(indice, 1);
+        }
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Tarjetas dinámicas (clonado de <template>, nunca innerHTML con strings)
+  // ---------------------------------------------------------------------
+
+  function inicializarListasDinamicas() {
+    configurarListaDinamica('boton-agregar-residente', 'lista-residentes', 'tarjeta-residente');
+    configurarListaDinamica('boton-agregar-vehiculo', 'lista-vehiculos', 'tarjeta-vehiculo');
+    configurarListaDinamica('boton-agregar-mascota', 'lista-mascotas', 'tarjeta-mascota', configurarTarjetaMascota);
+    configurarListaDinamica('boton-agregar-autorizado', 'lista-autorizados', 'tarjeta-autorizado');
+    configurarListaDinamica('boton-agregar-contratista', 'lista-contratistas', 'tarjeta-contratista');
+  }
+
+  function configurarListaDinamica(idBoton, idLista, idTemplate, configuradorExtra) {
+    document.getElementById(idBoton).addEventListener('click', function () {
+      agregarTarjeta(idLista, idTemplate, configuradorExtra);
+    });
+  }
+
+  function agregarTarjeta(idLista, idTemplate, configuradorExtra) {
+    var template = document.getElementById(idTemplate);
+    var nodo = template.content.cloneNode(true);
+    var tarjeta = nodo.querySelector('.tarjeta-item');
+
+    tarjeta.querySelector('.boton-eliminar-tarjeta').addEventListener('click', function () {
+      tarjeta.remove();
+    });
+
+    if (configuradorExtra) configuradorExtra(tarjeta);
+
+    document.getElementById(idLista).appendChild(nodo);
+    return tarjeta;
+  }
+
+  function configurarTarjetaMascota(tarjeta) {
+    var inputArchivo = tarjeta.querySelector('.campo-documento');
+    var estadoArchivo = tarjeta.querySelector('.campo-estado-archivo');
+
+    inputArchivo.addEventListener('change', function () {
+      var archivo = inputArchivo.files[0];
+      if (!archivo) return;
+
+      if (archivo.size > TAMANO_MAXIMO_ARCHIVO) {
+        estadoArchivo.textContent = 'El archivo supera 5MB. Seleccione uno más liviano.';
+        inputArchivo.value = '';
+        return;
+      }
+
+      estadoArchivo.textContent = 'Procesando archivo...';
+      var lector = new FileReader();
+      lector.onload = function () {
+        var resultado = lector.result; // data:mime;base64,XXXX
+        var base64 = resultado.split(',')[1];
+        tarjeta.dataset.documentoBase64 = base64;
+        tarjeta.dataset.documentoMime = archivo.type;
+        tarjeta.dataset.documentoNombre = archivo.name;
+        estadoArchivo.textContent = 'Archivo listo: ' + archivo.name;
+      };
+      lector.onerror = function () {
+        estadoArchivo.textContent = 'No fue posible leer el archivo. Intente con otro.';
+      };
+      lector.readAsDataURL(archivo);
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Recolección del payload desde el DOM
+  // ---------------------------------------------------------------------
+
+  function valorTexto(id) {
+    var el = document.getElementById(id);
+    return el ? el.value.trim() : '';
+  }
+
+  function valorRadioSeleccionado(nombre) {
+    var el = document.querySelector('input[name="' + nombre + '"]:checked');
+    return el ? el.value === 'si' : null;
+  }
+
+  function valorChecked(id) {
+    var el = document.getElementById(id);
+    return el ? el.checked : false;
+  }
+
+  function recolectarPayload() {
+    var payload = {};
+
+    payload.autorizacion = {
+      autoriza: valorRadioSeleccionado('autoriza-datos') === true,
+      observacionesEvacuacion: valorChecked('chk-observaciones-evacuacion')
+    };
+
+    payload.inmueble = {
+      bloque: valorTexto('inmueble-bloque'),
+      torre: valorTexto('inmueble-torre'),
+      apartamento: valorTexto('inmueble-apartamento'),
+      piso: valorTexto('inmueble-piso'),
+      tipoUnidad: valorTexto('inmueble-tipo-unidad'),
+      area: valorTexto('inmueble-area'),
+      ocupado: valorRadioSeleccionado('inmueble-ocupado') === true,
+      arrendado: valorRadioSeleccionado('inmueble-arrendado') === true
+    };
+
+    payload.propietario = {
+      nombreCompleto: valorTexto('propietario-nombre'),
+      tipoDocumento: valorTexto('propietario-tipo-documento'),
+      documento: valorTexto('propietario-documento'),
+      telefono: valorTexto('propietario-telefono'),
+      whatsapp: valorTexto('propietario-whatsapp'),
+      correo: valorTexto('propietario-correo'),
+      reside: valorRadioSeleccionado('propietario-reside') === true,
+      recibeComunicaciones: valorRadioSeleccionado('propietario-comunicaciones') === true
+    };
+
+    var esPropietario = valorChecked('chk-residente-es-propietario');
+    payload.residentePrincipal = {
+      esPropietario: esPropietario,
+      nombreCompleto: esPropietario ? '' : valorTexto('residente-principal-nombre'),
+      tipoDocumento: valorTexto('residente-principal-tipo-documento'),
+      documento: valorTexto('residente-principal-documento'),
+      telefono: valorTexto('residente-principal-telefono'),
+      whatsapp: valorTexto('residente-principal-whatsapp'),
+      correo: valorTexto('residente-principal-correo'),
+      relacionInmueble: valorTexto('residente-principal-relacion'),
+      fechaIngreso: valorTexto('residente-principal-fecha-ingreso')
+    };
+
+    payload.hogar = {
+      numHabitantes: valorTexto('hogar-num-habitantes'),
+      numAdultos: valorTexto('hogar-num-adultos'),
+      numMenores: valorTexto('hogar-num-menores'),
+      mayores60: valorRadioSeleccionado('hogar-mayores-60') === true,
+      circunstanciaEvacuacion: valorRadioSeleccionado('hogar-circunstancia-evacuacion') === true,
+      detalleEvacuacion: valorTexto('hogar-detalle-evacuacion')
+    };
+
+    payload.otrosResidentes = leerTarjetas('lista-residentes', function (tarjeta) {
+      return {
+        nombreCompleto: tarjeta.querySelector('.campo-nombre').value.trim(),
+        relacion: tarjeta.querySelector('.campo-relacion').value.trim(),
+        telefono: tarjeta.querySelector('.campo-telefono').value.trim(),
+        correo: tarjeta.querySelector('.campo-correo').value.trim(),
+        esMenor: tarjeta.querySelector('.campo-es-menor').checked
+      };
+    });
+
+    payload.vehiculos = leerTarjetas('lista-vehiculos', function (tarjeta) {
+      return {
+        tipoVehiculo: tarjeta.querySelector('.campo-tipo-vehiculo').value,
+        placa: tarjeta.querySelector('.campo-placa').value.trim(),
+        marca: tarjeta.querySelector('.campo-marca').value.trim(),
+        linea: tarjeta.querySelector('.campo-linea').value.trim(),
+        color: tarjeta.querySelector('.campo-color').value.trim(),
+        modelo: tarjeta.querySelector('.campo-modelo').value.trim(),
+        parqueadero: tarjeta.querySelector('.campo-parqueadero').value.trim(),
+        esElectrico: tarjeta.querySelector('.campo-es-electrico').checked,
+        responsable: tarjeta.querySelector('.campo-responsable').value.trim()
+      };
+    });
+
+    payload.bicicletas = {
+      tiene: valorRadioSeleccionado('bicicletas-tiene') === true,
+      cantidad: valorTexto('bicicletas-cantidad'),
+      usaBiciletero: valorRadioSeleccionado('bicicletas-usa-biciletero') === true,
+      espacioAsignado: valorTexto('bicicletas-espacio'),
+      observaciones: valorTexto('bicicletas-observaciones')
+    };
+
+    payload.mascotas = leerTarjetas('lista-mascotas', function (tarjeta) {
+      return {
+        nombre: tarjeta.querySelector('.campo-nombre').value.trim(),
+        especie: tarjeta.querySelector('.campo-especie').value,
+        raza: tarjeta.querySelector('.campo-raza').value.trim(),
+        sexo: tarjeta.querySelector('.campo-sexo').value,
+        edadAproximada: tarjeta.querySelector('.campo-edad').value.trim(),
+        responsable: tarjeta.querySelector('.campo-responsable').value.trim(),
+        documentoBase64: tarjeta.dataset.documentoBase64 || '',
+        documentoMime: tarjeta.dataset.documentoMime || '',
+        documentoNombre: tarjeta.dataset.documentoNombre || ''
+      };
+    });
+
+    payload.autorizados = leerTarjetas('lista-autorizados', function (tarjeta) {
+      return {
+        nombreCompleto: tarjeta.querySelector('.campo-nombre').value.trim(),
+        tipoPersona: tarjeta.querySelector('.campo-tipo-persona').value,
+        telefono: tarjeta.querySelector('.campo-telefono').value.trim(),
+        diasIngreso: tarjeta.querySelector('.campo-dias-ingreso').value.trim(),
+        horarioReferencia: tarjeta.querySelector('.campo-horario').value.trim()
+      };
+    });
+
+    payload.contratistas = leerTarjetas('lista-contratistas', function (tarjeta) {
+      return {
+        nombrePersonaEmpresa: tarjeta.querySelector('.campo-nombre').value.trim(),
+        tipoServicio: tarjeta.querySelector('.campo-tipo-servicio').value.trim(),
+        frecuencia: tarjeta.querySelector('.campo-frecuencia').value,
+        telefono: tarjeta.querySelector('.campo-telefono').value.trim()
+      };
+    });
+
+    payload.emergencia = {
+      nombreContacto: valorTexto('emergencia-nombre'),
+      parentesco: valorTexto('emergencia-parentesco'),
+      telefonoPrincipal: valorTexto('emergencia-telefono-principal'),
+      telefonoAlternativo: valorTexto('emergencia-telefono-alternativo'),
+      ciudad: valorTexto('emergencia-ciudad')
+    };
+
+    payload.arrendamiento = {
+      nombreArrendatario: valorTexto('arrendamiento-nombre'),
+      telefono: valorTexto('arrendamiento-telefono'),
+      correo: valorTexto('arrendamiento-correo'),
+      fechaInicio: valorTexto('arrendamiento-fecha-inicio'),
+      fechaFin: valorTexto('arrendamiento-fecha-fin'),
+      tieneInmobiliaria: valorRadioSeleccionado('arrendamiento-inmobiliaria') === true,
+      nombreInmobiliaria: valorTexto('arrendamiento-nombre-inmobiliaria')
+    };
+
+    payload.deposito = {
+      tiene: valorRadioSeleccionado('deposito-tiene') === true,
+      numero: valorTexto('deposito-numero'),
+      ubicacion: valorTexto('deposito-ubicacion'),
+      observaciones: valorTexto('deposito-observaciones')
+    };
+
+    payload.comunicaciones = {
+      whatsapp: valorChecked('chk-com-whatsapp'),
+      correo: valorChecked('chk-com-correo'),
+      llamada: valorChecked('chk-com-llamada'),
+      tiposInfo: ['chk-info-administrativa', 'chk-info-seguridad', 'chk-info-eventos', 'chk-info-emergencias']
+        .filter(valorChecked)
+        .map(function (id) { return document.getElementById(id).value; })
+    };
+
+    payload.encuesta = {
+      administracion: valorTexto('encuesta-administracion'),
+      seguridad: valorTexto('encuesta-seguridad'),
+      aseo: valorTexto('encuesta-aseo'),
+      mantenimiento: valorTexto('encuesta-mantenimiento'),
+      comunicacion: valorTexto('encuesta-comunicacion'),
+      problemaPrincipal: valorTexto('encuesta-problema-principal'),
+      propuesta: valorTexto('encuesta-propuesta'),
+      servicioAdicional: valorTexto('encuesta-servicio-adicional'),
+      observaciones: valorTexto('encuesta-observaciones')
+    };
+
+    payload.confirmacion = {
+      datosCorrectos: valorChecked('chk-confirmacion-datos-correctos'),
+      autorizaContacto: valorChecked('chk-confirmacion-autorizacion-contacto')
+    };
+
+    return payload;
+  }
+
+  function leerTarjetas(idLista, mapeador) {
+    var contenedor = document.getElementById(idLista);
+    var tarjetas = contenedor.querySelectorAll('.tarjeta-item');
+    var resultado = [];
+    tarjetas.forEach(function (tarjeta) {
+      resultado.push(mapeador(tarjeta));
+    });
+    return resultado;
+  }
+
+  // ---------------------------------------------------------------------
+  // Validación de cliente
+  // ---------------------------------------------------------------------
+
+  var REGEX_EMAIL_CLIENTE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  var REGEX_TELEFONO_CLIENTE = /^(\+?57)?[\s-]?(3\d{9}|[1-8]\d{6,7})$/;
+
+  function validarSeccionActual() {
+    limpiarMensajes();
+    var errores = [];
+    var seccion = estadoCenso.seccionActual;
+
+    if (seccion === 0) {
+      if (valorRadioSeleccionado('autoriza-datos') !== true) {
+        errores.push('Debe seleccionar "Sí, autorizo" para continuar con el registro.');
+      }
+    }
+
+    if (seccion === 1) {
+      if (!valorTexto('inmueble-torre')) errores.push('La torre/bloque es obligatoria.');
+      if (!valorTexto('inmueble-apartamento')) errores.push('El número de apartamento es obligatorio.');
+      if (!valorTexto('inmueble-tipo-unidad')) errores.push('Seleccione el tipo de unidad.');
+    }
+
+    if (seccion === 2) {
+      if (!valorTexto('propietario-nombre')) errores.push('El nombre del propietario es obligatorio.');
+      if (!valorTexto('propietario-documento')) errores.push('El documento del propietario es obligatorio.');
+      var correoProp = valorTexto('propietario-correo');
+      if (correoProp && !REGEX_EMAIL_CLIENTE.test(correoProp)) errores.push('El correo del propietario no es válido.');
+      var telProp = valorTexto('propietario-telefono');
+      if (telProp && !REGEX_TELEFONO_CLIENTE.test(telProp.replace(/\s/g, ''))) errores.push('El teléfono del propietario no es válido.');
+    }
+
+    if (seccion === 11) {
+      if (!valorTexto('emergencia-nombre')) errores.push('El nombre del contacto de emergencia es obligatorio.');
+      if (!valorTexto('emergencia-telefono-principal')) errores.push('El teléfono principal de emergencia es obligatorio.');
+    }
+
+    if (seccion === 16) {
+      if (!valorChecked('chk-confirmacion-datos-correctos')) {
+        errores.push('Debe confirmar que los datos registrados son correctos.');
+      }
+    }
+
+    if (errores.length > 0) {
+      mostrarMensaje(errores.join(' '), 'error');
+      return false;
+    }
+    return true;
+  }
+
+  // ---------------------------------------------------------------------
+  // Resumen (sección 16) - actualiza nodos existentes, nunca reconstruye HTML
+  // ---------------------------------------------------------------------
+
+  function construirResumen() {
+    var payload = recolectarPayload();
+
+    document.getElementById('resumen-inmueble-linea1').textContent =
+      'Torre/Bloque ' + (payload.inmueble.torre || '-') + ', Apto ' + (payload.inmueble.apartamento || '-');
+    document.getElementById('resumen-inmueble-linea2').textContent =
+      'Tipo: ' + (payload.inmueble.tipoUnidad || '-') + ' | Ocupado: ' + (payload.inmueble.ocupado ? 'Sí' : 'No') +
+      ' | Arrendado: ' + (payload.inmueble.arrendado ? 'Sí' : 'No');
+
+    document.getElementById('resumen-propietario-linea1').textContent = payload.propietario.nombreCompleto || '-';
+    document.getElementById('resumen-propietario-linea2').textContent =
+      (payload.propietario.telefono || 'Sin teléfono') + ' | ' + (payload.propietario.correo || 'Sin correo');
+
+    document.getElementById('resumen-residente-linea1').textContent = payload.residentePrincipal.esPropietario
+      ? 'El propietario es el residente principal.'
+      : (payload.residentePrincipal.nombreCompleto || 'No registrado');
+
+    document.getElementById('resumen-hogar-linea1').textContent =
+      'Habitantes: ' + (payload.hogar.numHabitantes || '0') + ' | Registrados: ' + (payload.otrosResidentes.length +
+        (payload.residentePrincipal.nombreCompleto || payload.residentePrincipal.esPropietario ? 1 : 0));
+
+    document.getElementById('resumen-otros-residentes').textContent =
+      payload.otrosResidentes.length > 0
+        ? payload.otrosResidentes.map(function (r) { return r.nombreCompleto; }).filter(Boolean).join(', ')
+        : 'Ninguno registrado';
+
+    document.getElementById('resumen-vehiculos').textContent =
+      payload.vehiculos.length > 0
+        ? payload.vehiculos.map(function (v) { return (v.tipoVehiculo || 'Vehículo') + (v.placa ? ' - ' + v.placa : ''); }).join(', ')
+        : 'Ninguno registrado';
+
+    document.getElementById('resumen-mascotas').textContent =
+      payload.mascotas.length > 0
+        ? payload.mascotas.map(function (m) { return m.nombre; }).filter(Boolean).join(', ')
+        : 'Ninguna registrada';
+
+    document.getElementById('resumen-emergencia').textContent =
+      payload.emergencia.nombreContacto
+        ? payload.emergencia.nombreContacto + ' - ' + payload.emergencia.telefonoPrincipal
+        : 'No registrado';
+
+    var bloqueAdvertencia = document.getElementById('bloque-resumen-advertencia');
+    bloqueAdvertencia.textContent = '';
+    var declarados = parseInt(payload.hogar.numHabitantes, 10) || 0;
+    var registrados = payload.otrosResidentes.length + (payload.residentePrincipal.nombreCompleto || payload.residentePrincipal.esPropietario ? 1 : 0);
+    if (declarados > 0 && declarados !== registrados) {
+      var parrafo = document.createElement('p');
+      parrafo.className = 'mensaje-advertencia';
+      parrafo.textContent = 'Declaró ' + declarados + ' habitante(s) pero registró ' + registrados +
+        ' residente(s). Puede continuar, pero le recomendamos verificar la información.';
+      bloqueAdvertencia.appendChild(parrafo);
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // Envío final
+  // ---------------------------------------------------------------------
+
+  function finalizarCenso() {
+    if (!validarSeccionActual()) return;
+
+    var payload = recolectarPayload();
+    mostrarCarga(true);
+
+    google.script.run
+      .withSuccessHandler(function (respuesta) {
+        mostrarCarga(false);
+        if (respuesta && respuesta.exito) {
+          borrarBorradorLocal();
+          mostrarPantallaExito(respuesta.codigoCenso);
+        } else {
+          mostrarMensaje((respuesta && respuesta.mensaje) || 'No fue posible completar el registro. Intente nuevamente.', 'error');
+        }
+      })
+      .withFailureHandler(function () {
+        mostrarCarga(false);
+        mostrarMensaje('Ocurrió un problema de conexión. Verifique su internet e intente nuevamente.', 'error');
+      })
+      .guardarCenso(payload);
+  }
+
+  function mostrarPantallaExito(codigoCenso) {
+    document.getElementById('contenedor-app').classList.add('oculto');
+    document.getElementById('texto-codigo-censo').textContent = codigoCenso || 'CENSO-000000';
+    document.getElementById('pantalla-exito').classList.remove('oculto');
+  }
+
+  // ---------------------------------------------------------------------
+  // Mensajes y estado de carga
+  // ---------------------------------------------------------------------
+
+  function mostrarMensaje(texto, tipo) {
+    var zona = document.getElementById('zona-mensajes');
+    var parrafo = document.createElement('p');
+    parrafo.className = tipo === 'error' ? 'mensaje-error' : 'mensaje-advertencia';
+    parrafo.textContent = texto;
+    zona.appendChild(parrafo);
+  }
+
+  function limpiarMensajes() {
+    document.getElementById('zona-mensajes').textContent = '';
+  }
+
+  function mostrarCarga(mostrar) {
+    document.getElementById('capa-carga').classList.toggle('oculto', !mostrar);
+  }
+
+  // ---------------------------------------------------------------------
+  // Autoguardado local (SOLO campos no sensibles)
+  // No se guarda: documentos, identidad completa (nombres/documentos), datos de
+  // menores, contacto de emergencia, ni datos de arrendamiento.
+  // ---------------------------------------------------------------------
+
+  function guardarBorradorLocal() {
+    try {
+      var borrador = {
+        inmueble: {
+          bloque: valorTexto('inmueble-bloque'),
+          torre: valorTexto('inmueble-torre'),
+          apartamento: valorTexto('inmueble-apartamento'),
+          piso: valorTexto('inmueble-piso'),
+          tipoUnidad: valorTexto('inmueble-tipo-unidad'),
+          area: valorTexto('inmueble-area'),
+          ocupado: valorRadioSeleccionado('inmueble-ocupado'),
+          arrendado: valorRadioSeleccionado('inmueble-arrendado')
+        },
+        comunicaciones: {
+          whatsapp: valorChecked('chk-com-whatsapp'),
+          correo: valorChecked('chk-com-correo'),
+          llamada: valorChecked('chk-com-llamada')
+        },
+        encuesta: {
+          administracion: valorTexto('encuesta-administracion'),
+          seguridad: valorTexto('encuesta-seguridad'),
+          aseo: valorTexto('encuesta-aseo'),
+          mantenimiento: valorTexto('encuesta-mantenimiento'),
+          comunicacion: valorTexto('encuesta-comunicacion')
+        },
+        seccionActual: estadoCenso.seccionActual
+      };
+      localStorage.setItem(CLAVE_BORRADOR_LOCAL, JSON.stringify(borrador));
+    } catch (error) {
+      // localStorage puede no estar disponible (modo privado, cuota llena, etc.)
+      // El formulario sigue funcionando sin autoguardado.
+    }
+  }
+
+  function cargarBorradorLocal() {
+    try {
+      var crudo = localStorage.getItem(CLAVE_BORRADOR_LOCAL);
+      if (!crudo) return;
+      var borrador = JSON.parse(crudo);
+
+      if (borrador.inmueble) {
+        document.getElementById('inmueble-bloque').value = borrador.inmueble.bloque || '';
+        document.getElementById('inmueble-torre').value = borrador.inmueble.torre || '';
+        document.getElementById('inmueble-apartamento').value = borrador.inmueble.apartamento || '';
+        document.getElementById('inmueble-piso').value = borrador.inmueble.piso || '';
+        document.getElementById('inmueble-tipo-unidad').value = borrador.inmueble.tipoUnidad || '';
+        document.getElementById('inmueble-area').value = borrador.inmueble.area || '';
+        if (borrador.inmueble.ocupado === true) document.getElementById('radio-ocupado-si').checked = true;
+        if (borrador.inmueble.ocupado === false) document.getElementById('radio-ocupado-no').checked = true;
+        if (borrador.inmueble.arrendado === true) document.getElementById('radio-arrendado-si').checked = true;
+        if (borrador.inmueble.arrendado === false) document.getElementById('radio-arrendado-no').checked = true;
+      }
+      if (borrador.comunicaciones) {
+        document.getElementById('chk-com-whatsapp').checked = !!borrador.comunicaciones.whatsapp;
+        document.getElementById('chk-com-correo').checked = !!borrador.comunicaciones.correo;
+        document.getElementById('chk-com-llamada').checked = !!borrador.comunicaciones.llamada;
+      }
+      if (borrador.encuesta) {
+        document.getElementById('encuesta-administracion').value = borrador.encuesta.administracion || '';
+        document.getElementById('encuesta-seguridad').value = borrador.encuesta.seguridad || '';
+        document.getElementById('encuesta-aseo').value = borrador.encuesta.aseo || '';
+        document.getElementById('encuesta-mantenimiento').value = borrador.encuesta.mantenimiento || '';
+        document.getElementById('encuesta-comunicacion').value = borrador.encuesta.comunicacion || '';
+      }
+      if (typeof borrador.seccionActual === 'number') {
+        mostrarMensaje('Se recuperó un borrador guardado anteriormente en este dispositivo.', 'advertencia');
+      }
+    } catch (error) {
+      // Borrador corrupto o localStorage no disponible: se ignora silenciosamente.
+    }
+  }
+
+  function borrarBorradorLocal() {
+    try {
+      localStorage.removeItem(CLAVE_BORRADOR_LOCAL);
+    } catch (error) {
+      // Sin efecto si localStorage no está disponible.
+    }
+  }
+</script>
