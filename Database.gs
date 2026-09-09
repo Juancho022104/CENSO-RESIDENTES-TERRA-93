@@ -184,8 +184,13 @@ function crearBicicleta(datos) {
     ID_BICICLETA: id,
     ID_UNIDAD: datos.idUnidad,
     CANTIDAD: datos.cantidad || 0,
+    COLOR: datos.color || '',
+    MODELO: datos.modelo || '',
+    NUMERO_TARJETA_PROPIEDAD: datos.numeroTarjetaPropiedad || '',
     USA_BICICLETERO: datos.usaBiciletero || '',
     ESPACIO_ASIGNADO: datos.espacioAsignado || '',
+    URL_FOTO_BICI: datos.urlFotoBici || '',
+    URL_FOTO_TARJETA_PROPIEDAD: datos.urlFotoTarjetaPropiedad || '',
     OBSERVACIONES: datos.observaciones || '',
     ESTADO: 'ACTIVO'
   });
@@ -204,8 +209,11 @@ function crearMascota(datos) {
     RAZA: datos.raza || '',
     SEXO: datos.sexo || '',
     EDAD_APROXIMADA: datos.edadAproximada || '',
-    DOCUMENTACION: datos.documentacion || '',
-    URL_DOCUMENTO: datos.urlDocumento || '',
+    URL_CARNET_VACUNAS: datos.urlCarnetVacunas || '',
+    URL_FOTO_MASCOTA: datos.urlFotoMascota || '',
+    URL_POLIZA: datos.urlPoliza || '',
+    URL_CHIP: datos.urlChip || '',
+    OBSERVACIONES: datos.observaciones || '',
     ESTADO: 'ACTIVO',
     FECHA_CREACION: ahora,
     FECHA_ACTUALIZACION: ahora
@@ -257,6 +265,7 @@ function crearContactoEmergencia(datos) {
     PARENTESCO: datos.parentesco || '',
     TELEFONO_PRINCIPAL: datos.telefonoPrincipal || '',
     TELEFONO_ALTERNATIVO: datos.telefonoAlternativo || '',
+    CORREO: datos.correo || '',
     CIUDAD: datos.ciudad || '',
     ESTADO: 'ACTIVO'
   });
@@ -271,8 +280,8 @@ function crearArrendamiento(datos) {
     NOMBRE_ARRENDATARIO: datos.nombreArrendatario || '',
     TELEFONO: datos.telefono || '',
     CORREO: datos.correo || '',
-    FECHA_INICIO: datos.fechaInicio || '',
-    FECHA_FIN: datos.fechaFin || '',
+    FECHA_INICIO: '',
+    FECHA_FIN: '',
     INMOBILIARIA: datos.inmobiliaria || '',
     ESTADO: 'ACTIVO',
     OBSERVACIONES: datos.observaciones || ''

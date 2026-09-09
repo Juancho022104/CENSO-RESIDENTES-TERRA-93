@@ -51,6 +51,20 @@ function guardarDocumentoDrive(base64, nombreArchivo, tipoMime, idUnidad, subcar
 }
 
 /**
+ * Sube un documento opcional (base64) a Drive sin bloquear el guardado del censo
+ * si falla o si el residente marcó "no tengo este documento" (llega sin base64).
+ */
+function subirDocumentoSiViene(base64, nombreArchivo, tipoMime, idUnidad, subcarpeta, nombreFuncionLog) {
+  if (!base64) return '';
+  try {
+    return guardarDocumentoDriveInterno(base64, nombreArchivo || 'documento', tipoMime || 'application/octet-stream', idUnidad, subcarpeta);
+  } catch (error) {
+    registrarErrorLog(nombreFuncionLog || 'subirDocumentoSiViene', error, { idUnidad: idUnidad });
+    return '';
+  }
+}
+
+/**
  * Guarda el censo completo de una unidad. Escribe en cascada todas las entidades
  * relacionadas dentro de un bloqueo (LockService) para evitar carreras.
  * @param {Object} payload
@@ -86,7 +100,6 @@ function guardarCenso(payload) {
     var resultadoUnidad = crearUnidad({
       idCopropiedad: config.ID_COPROPIEDAD || CONFIG.ID_COPROPIEDAD_DEFAULT,
       apartamento: datos.inmueble.apartamento,
-      area: datos.inmueble.area,
       coeficiente: datos.inmueble.coeficiente,
       estadoOcupacion: datos.inmueble.ocupado === true ? 'OCUPADO' : 'DESOCUPADO'
     });
@@ -176,38 +189,43 @@ function guardarCenso(payload) {
       });
     });
 
-    // 6) Bicicletas (no eléctricas)
+    // 6) Bicicletas (no eléctricas). Las fotos (bici / tarjeta de propiedad) viajan en
+    // base64 dentro del payload y se suben a Drive aquí, igual que en mascotas.
     if (datos.bicicletas && datos.bicicletas.tiene === true) {
+      var urlFotoBici = subirDocumentoSiViene(datos.bicicletas.fotoBiciBase64,
+        datos.bicicletas.fotoBiciNombre, datos.bicicletas.fotoBiciMime, idUnidad,
+        CONFIG.CARPETA_BICICLETAS_DRIVE, 'guardarCenso_fotoBici');
+      var urlFotoTarjeta = subirDocumentoSiViene(datos.bicicletas.fotoTarjetaBase64,
+        datos.bicicletas.fotoTarjetaNombre, datos.bicicletas.fotoTarjetaMime, idUnidad,
+        CONFIG.CARPETA_BICICLETAS_DRIVE, 'guardarCenso_fotoTarjetaBici');
       crearBicicleta({
         idUnidad: idUnidad,
         cantidad: datos.bicicletas.cantidad,
+        color: datos.bicicletas.color,
+        modelo: datos.bicicletas.modelo,
+        numeroTarjetaPropiedad: datos.bicicletas.numeroTarjetaPropiedad,
         usaBiciletero: datos.bicicletas.usaBiciletero === true ? 'SI' : 'NO',
         espacioAsignado: datos.bicicletas.espacioAsignado,
+        urlFotoBici: urlFotoBici,
+        urlFotoTarjetaPropiedad: urlFotoTarjeta,
         observaciones: datos.bicicletas.observaciones
       });
     }
 
-    // 7) Mascotas. Decisión de diseño: el documento (carné/vacunas) viaja en base64
-    // dentro del mismo payload de guardarCenso y se sube a Drive aquí, ya con idUnidad
-    // disponible, en vez de hacer una llamada google.script.run separada desde el
+    // 7) Mascotas. Decisión de diseño: los documentos (carné, foto, póliza, chip) viajan
+    // en base64 dentro del mismo payload de guardarCenso y se suben a Drive aquí, ya con
+    // idUnidad disponible, en vez de hacer llamadas google.script.run separadas desde el
     // cliente antes de que exista la unidad. Mantiene el guardado en una sola operación.
     (datos.mascotas || []).forEach(function (mascota) {
       if (!mascota.nombre) return;
-      var urlDocumento = '';
-      if (mascota.documentoBase64) {
-        try {
-          urlDocumento = guardarDocumentoDriveInterno(
-            mascota.documentoBase64,
-            mascota.documentoNombre || 'documento_mascota',
-            mascota.documentoMime || 'application/octet-stream',
-            idUnidad,
-            CONFIG.CARPETA_MASCOTAS_DRIVE
-          );
-        } catch (errorDocumento) {
-          registrarErrorLog('guardarCenso_documentoMascota', errorDocumento, { idUnidad: idUnidad });
-          // No se bloquea el registro del censo por un documento fallido.
-        }
-      }
+      var urlCarnet = subirDocumentoSiViene(mascota.carnetBase64, mascota.carnetNombre,
+        mascota.carnetMime, idUnidad, CONFIG.CARPETA_MASCOTAS_DRIVE, 'guardarCenso_carnetMascota');
+      var urlFoto = subirDocumentoSiViene(mascota.fotoBase64, mascota.fotoNombre,
+        mascota.fotoMime, idUnidad, CONFIG.CARPETA_MASCOTAS_DRIVE, 'guardarCenso_fotoMascota');
+      var urlPoliza = subirDocumentoSiViene(mascota.polizaBase64, mascota.polizaNombre,
+        mascota.polizaMime, idUnidad, CONFIG.CARPETA_MASCOTAS_DRIVE, 'guardarCenso_polizaMascota');
+      var urlChip = subirDocumentoSiViene(mascota.chipBase64, mascota.chipNombre,
+        mascota.chipMime, idUnidad, CONFIG.CARPETA_MASCOTAS_DRIVE, 'guardarCenso_chipMascota');
       crearMascota({
         idUnidad: idUnidad,
         nombre: mascota.nombre,
@@ -215,8 +233,11 @@ function guardarCenso(payload) {
         raza: mascota.raza,
         sexo: mascota.sexo,
         edadAproximada: mascota.edadAproximada,
-        documentacion: mascota.documentoNombre || '',
-        urlDocumento: urlDocumento
+        urlCarnetVacunas: urlCarnet,
+        urlFotoMascota: urlFoto,
+        urlPoliza: urlPoliza,
+        urlChip: urlChip,
+        observaciones: mascota.observaciones
       });
     });
 
@@ -253,6 +274,7 @@ function guardarCenso(payload) {
         parentesco: datos.emergencia.parentesco,
         telefonoPrincipal: datos.emergencia.telefonoPrincipal,
         telefonoAlternativo: datos.emergencia.telefonoAlternativo,
+        correo: datos.emergencia.correo,
         ciudad: datos.emergencia.ciudad
       });
     }
@@ -264,20 +286,7 @@ function guardarCenso(payload) {
         nombreArrendatario: datos.arrendamiento.nombreArrendatario,
         telefono: datos.arrendamiento.telefono,
         correo: datos.arrendamiento.correo,
-        fechaInicio: datos.arrendamiento.fechaInicio,
-        fechaFin: datos.arrendamiento.fechaFin,
         inmobiliaria: datos.arrendamiento.tieneInmobiliaria === true ? datos.arrendamiento.nombreInmobiliaria : 'NO'
-      });
-    }
-
-    // 12) Depósito (si aplica)
-    if (datos.deposito && datos.deposito.tiene === true) {
-      crearDeposito({
-        idUnidad: idUnidad,
-        idCopropiedad: config.ID_COPROPIEDAD || CONFIG.ID_COPROPIEDAD_DEFAULT,
-        numero: datos.deposito.numero,
-        ubicacion: datos.deposito.ubicacion,
-        observaciones: datos.deposito.observaciones
       });
     }
 

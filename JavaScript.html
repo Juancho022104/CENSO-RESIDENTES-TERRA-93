@@ -38,6 +38,7 @@
   document.addEventListener('DOMContentLoaded', function () {
     inicializarNavegacion();
     inicializarListasDinamicas();
+    configurarArchivosBicicleta();
     inicializarLogicaCondicional();
     cargarBorradorLocal();
     cargarConfiguracionServidor();
@@ -73,7 +74,7 @@
       document.documentElement.style.setProperty('--color-principal', config.COLOR_PRINCIPAL);
     }
 
-    var deshabilitadas = [];
+    var deshabilitadas = [13]; // Sección de depósito: retirada del censo, no se usa.
     if (config.HABILITAR_VEHICULOS === 'false') deshabilitadas.push(6);
     if (config.HABILITAR_BICICLETAS === 'false') deshabilitadas.push(7);
     if (config.HABILITAR_MASCOTAS === 'false') deshabilitadas.push(8);
@@ -196,14 +197,6 @@
       });
     });
 
-    // Depósito sí/no
-    document.querySelectorAll('input[name="deposito-tiene"]').forEach(function (radio) {
-      radio.addEventListener('change', function () {
-        var muestra = document.getElementById('radio-deposito-si').checked;
-        document.getElementById('bloque-detalle-deposito').classList.toggle('oculto', !muestra);
-      });
-    });
-
     // Arrendamiento -> gestionado por inmobiliaria
     document.querySelectorAll('input[name="arrendamiento-inmobiliaria"]').forEach(function (radio) {
       radio.addEventListener('change', function () {
@@ -259,9 +252,31 @@
     return tarjeta;
   }
 
-  function configurarTarjetaMascota(tarjeta) {
-    var inputArchivo = tarjeta.querySelector('.campo-documento');
-    var estadoArchivo = tarjeta.querySelector('.campo-estado-archivo');
+  // Estado de los archivos de la sección de bicicletas (no es una tarjeta clonable,
+  // es un único bloque estático, así que no usa dataset de tarjeta como las mascotas).
+  var estadoArchivosBicicleta = {};
+
+  /**
+   * Conecta un input de archivo + su checkbox "No tengo este documento" a un objeto
+   * destino (tarjeta.dataset para tarjetas clonadas, o un objeto plano como
+   * estadoArchivosBicicleta). Guarda base64/mime/nombre bajo <prefijo>Base64, etc.
+   * Marcar "No tengo este documento" deshabilita el input y limpia lo ya cargado,
+   * para que el residente pueda continuar sin ese documento sin que el formulario
+   * lo bloquee.
+   */
+  function configurarCampoArchivo(inputArchivo, checkNoTiene, estadoArchivo, destino, prefijo) {
+    checkNoTiene.addEventListener('change', function () {
+      inputArchivo.disabled = checkNoTiene.checked;
+      if (checkNoTiene.checked) {
+        inputArchivo.value = '';
+        destino[prefijo + 'Base64'] = '';
+        destino[prefijo + 'Mime'] = '';
+        destino[prefijo + 'Nombre'] = '';
+        estadoArchivo.textContent = 'Marcado como no disponible.';
+      } else {
+        estadoArchivo.textContent = '';
+      }
+    });
 
     inputArchivo.addEventListener('change', function () {
       var archivo = inputArchivo.files[0];
@@ -276,11 +291,10 @@
       estadoArchivo.textContent = 'Procesando archivo...';
       var lector = new FileReader();
       lector.onload = function () {
-        var resultado = lector.result; // data:mime;base64,XXXX
-        var base64 = resultado.split(',')[1];
-        tarjeta.dataset.documentoBase64 = base64;
-        tarjeta.dataset.documentoMime = archivo.type;
-        tarjeta.dataset.documentoNombre = archivo.name;
+        var base64 = lector.result.split(',')[1];
+        destino[prefijo + 'Base64'] = base64;
+        destino[prefijo + 'Mime'] = archivo.type;
+        destino[prefijo + 'Nombre'] = archivo.name;
         estadoArchivo.textContent = 'Archivo listo: ' + archivo.name;
       };
       lector.onerror = function () {
@@ -288,6 +302,30 @@
       };
       lector.readAsDataURL(archivo);
     });
+  }
+
+  function configurarTarjetaMascota(tarjeta) {
+    configurarCampoArchivo(
+      tarjeta.querySelector('.campo-archivo-carnet'), tarjeta.querySelector('.campo-no-tiene-carnet'),
+      tarjeta.querySelector('.campo-estado-archivo-carnet'), tarjeta.dataset, 'carnet');
+    configurarCampoArchivo(
+      tarjeta.querySelector('.campo-archivo-foto'), tarjeta.querySelector('.campo-no-tiene-foto'),
+      tarjeta.querySelector('.campo-estado-archivo-foto'), tarjeta.dataset, 'foto');
+    configurarCampoArchivo(
+      tarjeta.querySelector('.campo-archivo-poliza'), tarjeta.querySelector('.campo-no-tiene-poliza'),
+      tarjeta.querySelector('.campo-estado-archivo-poliza'), tarjeta.dataset, 'poliza');
+    configurarCampoArchivo(
+      tarjeta.querySelector('.campo-archivo-chip'), tarjeta.querySelector('.campo-no-tiene-chip'),
+      tarjeta.querySelector('.campo-estado-archivo-chip'), tarjeta.dataset, 'chip');
+  }
+
+  function configurarArchivosBicicleta() {
+    configurarCampoArchivo(
+      document.getElementById('bicicletas-archivo-foto'), document.getElementById('bicicletas-no-tiene-foto'),
+      document.getElementById('bicicletas-estado-archivo-foto'), estadoArchivosBicicleta, 'foto');
+    configurarCampoArchivo(
+      document.getElementById('bicicletas-archivo-tarjeta'), document.getElementById('bicicletas-no-tiene-tarjeta'),
+      document.getElementById('bicicletas-estado-archivo-tarjeta'), estadoArchivosBicicleta, 'tarjeta');
   }
 
   // ---------------------------------------------------------------------
@@ -319,7 +357,6 @@
 
     payload.inmueble = {
       apartamento: valorTexto('inmueble-apartamento'),
-      area: valorTexto('inmueble-area'),
       ocupado: valorRadioSeleccionado('inmueble-ocupado') === true,
       arrendado: valorRadioSeleccionado('inmueble-arrendado') === true
     };
@@ -384,9 +421,18 @@
     payload.bicicletas = {
       tiene: valorRadioSeleccionado('bicicletas-tiene') === true,
       cantidad: valorTexto('bicicletas-cantidad'),
+      color: valorTexto('bicicletas-color'),
+      modelo: valorTexto('bicicletas-modelo'),
+      numeroTarjetaPropiedad: valorTexto('bicicletas-tarjeta-propiedad'),
       usaBiciletero: valorRadioSeleccionado('bicicletas-usa-biciletero') === true,
       espacioAsignado: valorTexto('bicicletas-espacio'),
-      observaciones: valorTexto('bicicletas-observaciones')
+      observaciones: valorTexto('bicicletas-observaciones'),
+      fotoBiciBase64: estadoArchivosBicicleta.fotoBase64 || '',
+      fotoBiciMime: estadoArchivosBicicleta.fotoMime || '',
+      fotoBiciNombre: estadoArchivosBicicleta.fotoNombre || '',
+      fotoTarjetaBase64: estadoArchivosBicicleta.tarjetaBase64 || '',
+      fotoTarjetaMime: estadoArchivosBicicleta.tarjetaMime || '',
+      fotoTarjetaNombre: estadoArchivosBicicleta.tarjetaNombre || ''
     };
 
     payload.mascotas = leerTarjetas('lista-mascotas', function (tarjeta) {
@@ -397,9 +443,19 @@
         sexo: tarjeta.querySelector('.campo-sexo').value,
         edadAproximada: tarjeta.querySelector('.campo-edad').value.trim(),
         responsable: tarjeta.querySelector('.campo-responsable').value.trim(),
-        documentoBase64: tarjeta.dataset.documentoBase64 || '',
-        documentoMime: tarjeta.dataset.documentoMime || '',
-        documentoNombre: tarjeta.dataset.documentoNombre || ''
+        observaciones: tarjeta.querySelector('.campo-observaciones').value.trim(),
+        carnetBase64: tarjeta.dataset.carnetBase64 || '',
+        carnetMime: tarjeta.dataset.carnetMime || '',
+        carnetNombre: tarjeta.dataset.carnetNombre || '',
+        fotoBase64: tarjeta.dataset.fotoBase64 || '',
+        fotoMime: tarjeta.dataset.fotoMime || '',
+        fotoNombre: tarjeta.dataset.fotoNombre || '',
+        polizaBase64: tarjeta.dataset.polizaBase64 || '',
+        polizaMime: tarjeta.dataset.polizaMime || '',
+        polizaNombre: tarjeta.dataset.polizaNombre || '',
+        chipBase64: tarjeta.dataset.chipBase64 || '',
+        chipMime: tarjeta.dataset.chipMime || '',
+        chipNombre: tarjeta.dataset.chipNombre || ''
       };
     });
 
@@ -427,6 +483,7 @@
       parentesco: valorTexto('emergencia-parentesco'),
       telefonoPrincipal: valorTexto('emergencia-telefono-principal'),
       telefonoAlternativo: valorTexto('emergencia-telefono-alternativo'),
+      correo: valorTexto('emergencia-correo'),
       ciudad: valorTexto('emergencia-ciudad')
     };
 
@@ -434,17 +491,8 @@
       nombreArrendatario: valorTexto('arrendamiento-nombre'),
       telefono: valorTexto('arrendamiento-telefono'),
       correo: valorTexto('arrendamiento-correo'),
-      fechaInicio: valorTexto('arrendamiento-fecha-inicio'),
-      fechaFin: valorTexto('arrendamiento-fecha-fin'),
       tieneInmobiliaria: valorRadioSeleccionado('arrendamiento-inmobiliaria') === true,
       nombreInmobiliaria: valorTexto('arrendamiento-nombre-inmobiliaria')
-    };
-
-    payload.deposito = {
-      tiene: valorRadioSeleccionado('deposito-tiene') === true,
-      numero: valorTexto('deposito-numero'),
-      ubicacion: valorTexto('deposito-ubicacion'),
-      observaciones: valorTexto('deposito-observaciones')
     };
 
     payload.comunicaciones = {
@@ -657,7 +705,6 @@
       var borrador = {
         inmueble: {
           apartamento: valorTexto('inmueble-apartamento'),
-          area: valorTexto('inmueble-area'),
           ocupado: valorRadioSeleccionado('inmueble-ocupado'),
           arrendado: valorRadioSeleccionado('inmueble-arrendado')
         },
@@ -690,7 +737,6 @@
 
       if (borrador.inmueble) {
         document.getElementById('inmueble-apartamento').value = borrador.inmueble.apartamento || '';
-        document.getElementById('inmueble-area').value = borrador.inmueble.area || '';
         if (borrador.inmueble.ocupado === true) document.getElementById('radio-ocupado-si').checked = true;
         if (borrador.inmueble.ocupado === false) document.getElementById('radio-ocupado-no').checked = true;
         if (borrador.inmueble.arrendado === true) document.getElementById('radio-arrendado-si').checked = true;

@@ -72,11 +72,6 @@
         </div>
 
         <div class="campo">
-          <label for="inmueble-area">Área aproximada (m²)</label>
-          <input type="number" id="inmueble-area" min="0" step="0.01">
-        </div>
-
-        <div class="campo">
           <label>¿El inmueble está ocupado actualmente?</label>
           <div class="grupo-radio">
             <label class="opcion-radio"><input type="radio" name="inmueble-ocupado" value="si" id="radio-ocupado-si"> Sí</label>
@@ -302,6 +297,20 @@
             <label for="bicicletas-cantidad">Cantidad</label>
             <input type="number" id="bicicletas-cantidad" min="0">
           </div>
+          <div class="fila-dos-columnas">
+            <div class="campo">
+              <label for="bicicletas-color">Color</label>
+              <input type="text" id="bicicletas-color">
+            </div>
+            <div class="campo">
+              <label for="bicicletas-modelo">Modelo</label>
+              <input type="text" id="bicicletas-modelo">
+            </div>
+          </div>
+          <div class="campo">
+            <label for="bicicletas-tarjeta-propiedad">Número de tarjeta de propiedad (si tiene)</label>
+            <input type="text" id="bicicletas-tarjeta-propiedad">
+          </div>
           <div class="campo">
             <label>¿Usa el biciletero de la copropiedad?</label>
             <div class="grupo-radio">
@@ -313,6 +322,20 @@
             <label for="bicicletas-espacio">Espacio asignado (si aplica)</label>
             <input type="text" id="bicicletas-espacio">
           </div>
+
+          <div class="campo campo-documento">
+            <label>Foto de la bicicleta (opcional, máx. 5MB)</label>
+            <input type="file" id="bicicletas-archivo-foto" accept="image/*">
+            <label class="opcion-checkbox"><input type="checkbox" id="bicicletas-no-tiene-foto"> No tengo este documento</label>
+            <p class="ayuda-campo" id="bicicletas-estado-archivo-foto"></p>
+          </div>
+          <div class="campo campo-documento">
+            <label>Foto de la tarjeta de propiedad (opcional, máx. 5MB)</label>
+            <input type="file" id="bicicletas-archivo-tarjeta" accept="image/*,.pdf">
+            <label class="opcion-checkbox"><input type="checkbox" id="bicicletas-no-tiene-tarjeta"> No tengo este documento</label>
+            <p class="ayuda-campo" id="bicicletas-estado-archivo-tarjeta"></p>
+          </div>
+
           <div class="campo">
             <label for="bicicletas-observaciones">Observaciones</label>
             <textarea id="bicicletas-observaciones"></textarea>
@@ -374,6 +397,10 @@
           </div>
         </div>
         <div class="campo">
+          <label for="emergencia-correo">Correo electrónico</label>
+          <input type="email" id="emergencia-correo">
+        </div>
+        <div class="campo">
           <label for="emergencia-ciudad">Ciudad</label>
           <input type="text" id="emergencia-ciudad">
         </div>
@@ -398,16 +425,6 @@
             <input type="email" id="arrendamiento-correo">
           </div>
         </div>
-        <div class="fila-dos-columnas">
-          <div class="campo">
-            <label for="arrendamiento-fecha-inicio">Fecha inicio contrato</label>
-            <input type="date" id="arrendamiento-fecha-inicio">
-          </div>
-          <div class="campo">
-            <label for="arrendamiento-fecha-fin">Fecha fin contrato</label>
-            <input type="date" id="arrendamiento-fecha-fin">
-          </div>
-        </div>
         <div class="campo">
           <label>¿Gestionado por inmobiliaria?</label>
           <div class="grupo-radio">
@@ -421,34 +438,7 @@
         </div>
       </section>
 
-      <!-- ============ SECCIÓN 13: DEPÓSITO ============ -->
-      <section class="censo-seccion oculto" data-seccion="13">
-        <h2>Depósito o cuarto útil</h2>
-        <p class="subtitulo-seccion">Registre si su unidad cuenta con depósito asignado</p>
-
-        <div class="campo">
-          <label>¿Tiene depósito asignado?</label>
-          <div class="grupo-radio">
-            <label class="opcion-radio"><input type="radio" name="deposito-tiene" value="si" id="radio-deposito-si"> Sí</label>
-            <label class="opcion-radio"><input type="radio" name="deposito-tiene" value="no" id="radio-deposito-no"> No</label>
-          </div>
-        </div>
-
-        <div id="bloque-detalle-deposito" class="oculto">
-          <div class="campo">
-            <label for="deposito-numero">Número de depósito</label>
-            <input type="text" id="deposito-numero">
-          </div>
-          <div class="campo">
-            <label for="deposito-ubicacion">Ubicación</label>
-            <input type="text" id="deposito-ubicacion">
-          </div>
-          <div class="campo">
-            <label for="deposito-observaciones">Observaciones</label>
-            <textarea id="deposito-observaciones"></textarea>
-          </div>
-        </div>
-      </section>
+      <!-- SECCIÓN 13 (depósito) retirada del censo: queda deshabilitada en JavaScript.html -->
 
       <!-- ============ SECCIÓN 14: COMUNICACIONES ============ -->
       <section class="censo-seccion oculto" data-seccion="14">
@@ -761,10 +751,40 @@
         <label>Responsable de la mascota</label>
         <input type="text" class="campo-responsable">
       </div>
+
+      <p class="subtitulo-seccion">Documentos (opcionales, máx. 5MB cada uno). Si no tiene alguno, marque la casilla "No tengo este documento" y continúe sin problema.</p>
+
+      <div class="campo campo-documento">
+        <label>Carné de vacunas</label>
+        <input type="file" class="campo-archivo-carnet" accept="image/*,.pdf">
+        <label class="opcion-checkbox"><input type="checkbox" class="campo-no-tiene-carnet"> No tengo este documento</label>
+        <p class="ayuda-campo campo-estado-archivo-carnet"></p>
+      </div>
+
+      <div class="campo campo-documento">
+        <label>Foto de la mascota</label>
+        <input type="file" class="campo-archivo-foto" accept="image/*">
+        <label class="opcion-checkbox"><input type="checkbox" class="campo-no-tiene-foto"> No tengo este documento</label>
+        <p class="ayuda-campo campo-estado-archivo-foto"></p>
+      </div>
+
+      <div class="campo campo-documento">
+        <label>Póliza</label>
+        <input type="file" class="campo-archivo-poliza" accept="image/*,.pdf">
+        <label class="opcion-checkbox"><input type="checkbox" class="campo-no-tiene-poliza"> No tengo este documento</label>
+        <p class="ayuda-campo campo-estado-archivo-poliza"></p>
+      </div>
+
+      <div class="campo campo-documento">
+        <label>Chip (comprobante de identificación)</label>
+        <input type="file" class="campo-archivo-chip" accept="image/*,.pdf">
+        <label class="opcion-checkbox"><input type="checkbox" class="campo-no-tiene-chip"> No tengo este documento</label>
+        <p class="ayuda-campo campo-estado-archivo-chip"></p>
+      </div>
+
       <div class="campo">
-        <label>Documento (carné de vacunas, etc. - máx 5MB)</label>
-        <input type="file" class="campo-documento" accept="image/*,.pdf">
-        <p class="ayuda-campo campo-estado-archivo"></p>
+        <label>Observaciones</label>
+        <textarea class="campo-observaciones"></textarea>
       </div>
     </div>
   </template>
