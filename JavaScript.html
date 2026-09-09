@@ -318,11 +318,7 @@
     };
 
     payload.inmueble = {
-      bloque: valorTexto('inmueble-bloque'),
-      torre: valorTexto('inmueble-torre'),
       apartamento: valorTexto('inmueble-apartamento'),
-      piso: valorTexto('inmueble-piso'),
-      tipoUnidad: valorTexto('inmueble-tipo-unidad'),
       area: valorTexto('inmueble-area'),
       ocupado: valorRadioSeleccionado('inmueble-ocupado') === true,
       arrendado: valorRadioSeleccionado('inmueble-arrendado') === true
@@ -509,9 +505,7 @@
     }
 
     if (seccion === 1) {
-      if (!valorTexto('inmueble-torre')) errores.push('La torre/bloque es obligatoria.');
       if (!valorTexto('inmueble-apartamento')) errores.push('El número de apartamento es obligatorio.');
-      if (!valorTexto('inmueble-tipo-unidad')) errores.push('Seleccione el tipo de unidad.');
     }
 
     if (seccion === 2) {
@@ -549,9 +543,9 @@
     var payload = recolectarPayload();
 
     document.getElementById('resumen-inmueble-linea1').textContent =
-      'Torre/Bloque ' + (payload.inmueble.torre || '-') + ', Apto ' + (payload.inmueble.apartamento || '-');
+      'Apartamento ' + (payload.inmueble.apartamento || '-');
     document.getElementById('resumen-inmueble-linea2').textContent =
-      'Tipo: ' + (payload.inmueble.tipoUnidad || '-') + ' | Ocupado: ' + (payload.inmueble.ocupado ? 'Sí' : 'No') +
+      'Ocupado: ' + (payload.inmueble.ocupado ? 'Sí' : 'No') +
       ' | Arrendado: ' + (payload.inmueble.arrendado ? 'Sí' : 'No');
 
     document.getElementById('resumen-propietario-linea1').textContent = payload.propietario.nombreCompleto || '-';
@@ -662,11 +656,7 @@
     try {
       var borrador = {
         inmueble: {
-          bloque: valorTexto('inmueble-bloque'),
-          torre: valorTexto('inmueble-torre'),
           apartamento: valorTexto('inmueble-apartamento'),
-          piso: valorTexto('inmueble-piso'),
-          tipoUnidad: valorTexto('inmueble-tipo-unidad'),
           area: valorTexto('inmueble-area'),
           ocupado: valorRadioSeleccionado('inmueble-ocupado'),
           arrendado: valorRadioSeleccionado('inmueble-arrendado')
@@ -699,11 +689,7 @@
       var borrador = JSON.parse(crudo);
 
       if (borrador.inmueble) {
-        document.getElementById('inmueble-bloque').value = borrador.inmueble.bloque || '';
-        document.getElementById('inmueble-torre').value = borrador.inmueble.torre || '';
         document.getElementById('inmueble-apartamento').value = borrador.inmueble.apartamento || '';
-        document.getElementById('inmueble-piso').value = borrador.inmueble.piso || '';
-        document.getElementById('inmueble-tipo-unidad').value = borrador.inmueble.tipoUnidad || '';
         document.getElementById('inmueble-area').value = borrador.inmueble.area || '';
         if (borrador.inmueble.ocupado === true) document.getElementById('radio-ocupado-si').checked = true;
         if (borrador.inmueble.ocupado === false) document.getElementById('radio-ocupado-no').checked = true;

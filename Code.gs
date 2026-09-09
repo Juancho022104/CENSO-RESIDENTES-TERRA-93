@@ -72,8 +72,8 @@ function guardarCenso(payload) {
       return { exito: false, mensaje: validacion.errores.join(' ') };
     }
 
-    // Duplicado de unidad (torre + apto) ya censada
-    var unidadExistente = buscarUnidadPorTorreApto(datos.inmueble.torre, datos.inmueble.apartamento);
+    // Duplicado de unidad (apto) ya censada
+    var unidadExistente = buscarUnidadPorApto(datos.inmueble.apartamento);
     if (unidadExistente && unidadExistente.ESTADO_REGISTRO === 'CENSADO') {
       return {
         exito: false,
@@ -85,11 +85,7 @@ function guardarCenso(payload) {
     var config = obtenerConfiguracion();
     var resultadoUnidad = crearUnidad({
       idCopropiedad: config.ID_COPROPIEDAD || CONFIG.ID_COPROPIEDAD_DEFAULT,
-      bloque: datos.inmueble.bloque,
-      torre: datos.inmueble.torre,
-      piso: datos.inmueble.piso,
       apartamento: datos.inmueble.apartamento,
-      tipoUnidad: datos.inmueble.tipoUnidad,
       area: datos.inmueble.area,
       coeficiente: datos.inmueble.coeficiente,
       estadoOcupacion: datos.inmueble.ocupado === true ? 'OCUPADO' : 'DESOCUPADO'
@@ -320,8 +316,7 @@ function guardarCenso(payload) {
       FECHA_ACTUALIZACION: new Date()
     });
 
-    registrarAuditoria('CREAR', 'CENSO', idUnidad, 'Censo registrado para torre ' +
-      datos.inmueble.torre + ' apto ' + datos.inmueble.apartamento);
+    registrarAuditoria('CREAR', 'CENSO', idUnidad, 'Censo registrado para apto ' + datos.inmueble.apartamento);
 
     return {
       exito: true,
@@ -329,7 +324,7 @@ function guardarCenso(payload) {
       tokenActualizacion: resultadoUnidad.tokenActualizacion
     };
   } catch (error) {
-    registrarErrorLog('guardarCenso', error, { torre: payload && payload.inmueble ? payload.inmueble.torre : '' });
+    registrarErrorLog('guardarCenso', error, { apartamento: payload && payload.inmueble ? payload.inmueble.apartamento : '' });
     return { exito: false, mensaje: 'Ocurrió un problema al guardar el censo. Por favor intente nuevamente. Si el problema persiste, contacte a la administración.' };
   } finally {
     lock.releaseLock();

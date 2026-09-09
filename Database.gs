@@ -343,7 +343,7 @@ function crearUnidad(datos) {
     TORRE: datos.torre || '',
     PISO: datos.piso || '',
     APARTAMENTO: datos.apartamento || '',
-    TIPO_UNIDAD: datos.tipoUnidad || '',
+    TIPO_UNIDAD: 'Apartamento',
     AREA: datos.area || '',
     COEFICIENTE: datos.coeficiente || '',
     ESTADO_OCUPACION: datos.estadoOcupacion || '',
@@ -354,7 +354,7 @@ function crearUnidad(datos) {
     FECHA_CREACION: ahora,
     FECHA_ACTUALIZACION: ahora
   });
-  registrarIndiceDuplicado('APTO_TORRE', (datos.torre || '') + '-' + (datos.apartamento || ''));
+  registrarIndiceDuplicado('APTO', String(datos.apartamento || ''));
   return { idUnidad: id, codigoCenso: codigoCenso, tokenActualizacion: token };
 }
 
@@ -368,10 +368,10 @@ function obtenerUnidad(idUnidad) {
   return null;
 }
 
-function buscarUnidadPorTorreApto(torre, apto) {
+function buscarUnidadPorApto(apto) {
   var filas = obtenerFilasComoObjetos(CONFIG.HOJAS.UNIDADES);
   for (var i = 0; i < filas.length; i++) {
-    if (String(filas[i].TORRE) === String(torre) && String(filas[i].APARTAMENTO) === String(apto)) {
+    if (String(filas[i].APARTAMENTO) === String(apto)) {
       return filas[i];
     }
   }
