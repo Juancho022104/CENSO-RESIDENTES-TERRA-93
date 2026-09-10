@@ -58,26 +58,28 @@
     margin-bottom: 20px;
   }
 
+  /* Sin fondo/sombra/borde: el objetivo es que ambos logos se vean
+     "puestos" sobre el degradado, no encajonados en una tarjeta.
+     Terra 93 ya funciona así porque su propio fondo verde se
+     confunde con el del header. Ravell todavía trae un fondo blanco
+     sólido pegado en el PNG (viene de haberlo exportado desde Paint,
+     que no soporta transparencia) — hasta que no se reemplace ese
+     archivo por una versión con fondo transparente (ej. con
+     remove.bg), esa caja blanca se va a seguir viendo aunque el CSS
+     ya no le agregue ninguna. */
   .logo-ravell-esquina {
     display: block;
-    height: 40px;
+    height: 64px;
     width: auto;
-    max-width: 140px;
+    max-width: 190px;
     object-fit: contain;
-    background: #fff;
-    border-radius: 10px;
-    padding: 7px 12px;
-    box-shadow: var(--sombra);
   }
 
   .logo-terra93-esquina {
     display: block;
-    height: 68px;
+    height: 64px;
     width: auto;
     object-fit: contain;
-    border-radius: 14px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.28);
-    border: 1px solid rgba(255,255,255,0.12);
   }
 
   header.encabezado-app h1 {
@@ -430,7 +432,7 @@
     .fila-dos-columnas { grid-template-columns: 1fr; }
     header.encabezado-app { padding: 16px 14px 18px; }
     main.contenido-censo { padding: 12px; }
-    .logo-terra93-esquina { height: 52px; }
-    .logo-ravell-esquina { height: 32px; max-width: 105px; padding: 5px 8px; }
+    .logo-terra93-esquina { height: 48px; }
+    .logo-ravell-esquina { height: 48px; max-width: 140px; }
   }
 </style>
