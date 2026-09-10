@@ -45,6 +45,34 @@
     padding: 20px 20px 16px;
   }
 
+  .fila-logos {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .logo-insignia {
+    display: block;
+    object-fit: contain;
+    border-radius: 10px;
+    box-shadow: var(--sombra);
+  }
+
+  .logo-ravell {
+    height: 36px;
+    width: auto;
+    background: #fff;
+    padding: 6px 10px;
+  }
+
+  .logo-terra93 {
+    height: 52px;
+    width: auto;
+  }
+
   header.encabezado-app .nombre-admin {
     font-size: 13px;
     letter-spacing: 0.08em;
@@ -400,5 +428,7 @@
     .fila-dos-columnas { grid-template-columns: 1fr; }
     header.encabezado-app { padding: 16px 14px 14px; }
     main.contenido-censo { padding: 12px; }
+    .logo-ravell { height: 30px; }
+    .logo-terra93 { height: 44px; }
   }
 </style>
