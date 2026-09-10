@@ -42,48 +42,55 @@
   header.encabezado-app {
     background: var(--color-principal);
     color: #fff;
-    padding: 20px 20px 16px;
+    padding: 32px 24px 24px;
+    text-align: center;
   }
 
-  .fila-logos {
+  /* Terra 93 es el protagonista visual del header: un emblema grande y
+     centrado, como un sello. Ravell PH queda debajo, discreto, como
+     crédito de administración — evita que compitan dos logos del mismo
+     tamaño por la atención. */
+  .insignia-copropiedad {
     display: flex;
-    align-items: center;
     justify-content: center;
-    flex-wrap: wrap;
-    gap: 14px;
-    margin-bottom: 14px;
-  }
-
-  .logo-insignia {
-    display: block;
-    object-fit: contain;
-    border-radius: 10px;
-    box-shadow: var(--sombra);
-  }
-
-  .logo-ravell {
-    height: 36px;
-    width: auto;
-    background: #fff;
-    padding: 6px 10px;
+    margin-bottom: 16px;
   }
 
   .logo-terra93 {
-    height: 52px;
+    display: block;
+    height: 96px;
     width: auto;
+    object-fit: contain;
+    border-radius: 18px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.28);
+    border: 1px solid rgba(255,255,255,0.12);
   }
 
-  header.encabezado-app .nombre-admin {
-    font-size: 13px;
-    letter-spacing: 0.08em;
+  .creditos-admin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     opacity: 0.85;
-    margin: 0 0 4px;
+    margin: 0 0 18px;
+  }
+
+  .logo-ravell {
+    display: block;
+    height: 16px;
+    width: auto;
+    object-fit: contain;
+    background: #fff;
+    border-radius: 4px;
+    padding: 3px 5px;
   }
 
   header.encabezado-app h1 {
-    font-size: 20px;
-    margin: 0 0 2px;
+    font-size: 22px;
+    margin: 0 0 4px;
     font-weight: 700;
   }
 
@@ -97,8 +104,11 @@
 
   .texto-bienvenida {
     font-size: 13px;
-    margin-top: 10px;
+    margin-top: 12px;
     opacity: 0.92;
+    max-width: 440px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   /* Barra de progreso */
@@ -426,9 +436,9 @@
 
   @media (max-width: 420px) {
     .fila-dos-columnas { grid-template-columns: 1fr; }
-    header.encabezado-app { padding: 16px 14px 14px; }
+    header.encabezado-app { padding: 24px 16px 18px; }
     main.contenido-censo { padding: 12px; }
-    .logo-ravell { height: 30px; }
-    .logo-terra93 { height: 44px; }
+    .logo-terra93 { height: 76px; }
+    .logo-ravell { height: 14px; }
   }
 </style>
