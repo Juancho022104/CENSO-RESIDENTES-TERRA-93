@@ -40,10 +40,13 @@
 
   /* Encabezado */
   header.encabezado-app {
-    /* Degradado horizontal: casi blanco donde está el logo de Ravell
-       (así su fondo blanco se pierde de vista de forma natural) hacia
-       verde claro donde está Terra 93. */
-    background: linear-gradient(90deg, #FAFCFB 0%, #D3ECE0 55%, #A5D8BE 100%);
+    /* Degradado horizontal: casi blanco donde está Ravell (su logo es
+       oscuro, necesita fondo claro) hacia verde oscuro de marca donde
+       está Terra 93 (su logo es blanco, necesita fondo oscuro para
+       contrastar - sobre blanco sería invisible). El centro queda en
+       un verde intermedio, suficiente para que el texto oscuro del
+       título siga siendo legible. */
+    background: linear-gradient(90deg, #FAFCFB 0%, #EAF5EF 32%, #6FA98B 72%, #0B3D2E 100%);
     color: var(--color-principal);
     padding: 20px 20px 24px;
     text-align: center;
