@@ -78,20 +78,11 @@
     object-fit: contain;
   }
 
-  /* "Desvanecido" sin depender de un archivo transparente: una máscara
-     radial deja el centro del logo intacto y desaparece los bordes de
-     forma gradual, así el rectángulo duro de la foto no se nota. Se usa
-     filter: drop-shadow (sigue la forma ya desvanecida) en vez de
-     box-shadow (que dibujaría la sombra del rectángulo completo, sin
-     desvanecer, arruinando el efecto). */
   .logo-terra93-esquina {
     display: block;
     height: 64px;
     width: auto;
     object-fit: contain;
-    -webkit-mask-image: radial-gradient(closest-side, rgba(0,0,0,1) 58%, rgba(0,0,0,0) 100%);
-    mask-image: radial-gradient(closest-side, rgba(0,0,0,1) 58%, rgba(0,0,0,0) 100%);
-    filter: drop-shadow(0 3px 8px rgba(11,61,46,0.22));
   }
 
   header.encabezado-app h1 {
