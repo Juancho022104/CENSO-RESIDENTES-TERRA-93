@@ -65,6 +65,18 @@ function guardarCenso(payload) {
   }
 
   try {
+    // Idempotencia: si el cliente reintenta un envío que ya se guardó (la respuesta
+    // se perdió o el formulario se congeló), se devuelve el mismo resultado en vez
+    // de crear otra unidad o rechazarlo como duplicado.
+    var idSolicitud = payload && payload.idSolicitud ? String(payload.idSolicitud).slice(0, 64) : '';
+    var claveSolicitud = idSolicitud ? 'envio_' + idSolicitud : '';
+    if (claveSolicitud) {
+      var previo = CacheService.getScriptCache().get(claveSolicitud);
+      if (previo) {
+        return JSON.parse(previo);
+      }
+    }
+
     var datos = sanitizarPayload(payload);
 
     var validacion = validarDatos(datos);
@@ -323,11 +335,19 @@ function guardarCenso(payload) {
     registrarAuditoria('CREAR', 'CENSO', idUnidad, 'Censo registrado para torre ' +
       datos.inmueble.torre + ' apto ' + datos.inmueble.apartamento);
 
-    return {
+    var resultadoFinal = {
       exito: true,
       codigoCenso: resultadoUnidad.codigoCenso,
       tokenActualizacion: resultadoUnidad.tokenActualizacion
     };
+    if (claveSolicitud) {
+      try {
+        CacheService.getScriptCache().put(claveSolicitud, JSON.stringify(resultadoFinal), 21600);
+      } catch (errorCache) {
+        // Sin caché no se pierde el guardado; solo se pierde la idempotencia del reintento.
+      }
+    }
+    return resultadoFinal;
   } catch (error) {
     registrarErrorLog('guardarCenso', error, { torre: payload && payload.inmueble ? payload.inmueble.torre : '' });
     return { exito: false, mensaje: 'Ocurrió un problema al guardar el censo. Por favor intente nuevamente. Si el problema persiste, contacte a la administración.' };
