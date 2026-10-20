@@ -62,9 +62,7 @@ function validarDatos(payload) {
 
   // Sección 1: identificación del inmueble
   var inmueble = payload.inmueble || {};
-  if (!inmueble.torre) errores.push('La torre/bloque del inmueble es obligatoria.');
   if (!inmueble.apartamento) errores.push('El número de apartamento es obligatorio.');
-  if (!inmueble.tipoUnidad) errores.push('El tipo de unidad es obligatorio.');
 
   // Sección 2: propietario
   var propietario = payload.propietario || {};
@@ -121,7 +119,7 @@ function formatoPlacaEsRazonable(placa) {
 
 /**
  * Verifica si un valor ya existe en el índice liviano de duplicados guardado en
- * PropertiesService. tipo: 'PLACA' | 'DOCUMENTO' | 'APTO_TORRE'
+ * PropertiesService. tipo: 'PLACA' | 'DOCUMENTO' | 'APTO'
  */
 function existeDuplicado(tipo, valor, idExcluir) {
   if (!valor) return false;

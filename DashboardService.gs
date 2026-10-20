@@ -209,16 +209,16 @@ function generarDashboardEnHoja() {
   hoja.getRange(1, 7, mascotas.length, 2).setValues(mascotas);
 
   var filaAlertas = Math.max(filas.length, vehiculos.length, mascotas.length) + 3;
-  var alertas = [['Unidad', 'Torre', 'Apartamento', 'Alerta']].concat(
-    d.alertas.map(function (a) { return [a.idUnidad, a.torre, a.apartamento, a.tipo]; }));
+  var alertas = [['Unidad', 'Apartamento', 'Alerta']].concat(
+    d.alertas.map(function (a) { return [a.idUnidad, a.apartamento, a.tipo]; }));
   hoja.getRange(filaAlertas - 1, 1).setValue('Alertas de calidad de datos (' + d.alertas.length + ')').setFontWeight('bold');
-  hoja.getRange(filaAlertas, 1, alertas.length, 4).setValues(alertas);
+  hoja.getRange(filaAlertas, 1, alertas.length, 3).setValues(alertas);
 
   [[1, 2, filas.length], [4, 2, vehiculos.length], [7, 2, mascotas.length]].forEach(function (t) {
     var enc = hoja.getRange(1, t[0], 1, t[1]);
     enc.setFontWeight('bold').setBackground('#0B3D2E').setFontColor('#FFFFFF');
   });
-  hoja.getRange(filaAlertas, 1, 1, 4).setFontWeight('bold').setBackground('#0B3D2E').setFontColor('#FFFFFF');
+  hoja.getRange(filaAlertas, 1, 1, 3).setFontWeight('bold').setBackground('#0B3D2E').setFontColor('#FFFFFF');
   hoja.setColumnWidth(1, 240);
   hoja.autoResizeColumns(2, 8);
 

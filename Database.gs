@@ -8,7 +8,7 @@
  * Obtiene (o crea) la hoja por nombre.
  */
 function obtenerHoja(nombre) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = obtenerSpreadsheet();
   var hoja = ss.getSheetByName(nombre);
   if (!hoja) {
     hoja = ss.insertSheet(nombre);
@@ -202,8 +202,13 @@ function crearBicicleta(datos) {
     ID_BICICLETA: id,
     ID_UNIDAD: datos.idUnidad,
     CANTIDAD: datos.cantidad || 0,
+    COLOR: datos.color || '',
+    MODELO: datos.modelo || '',
+    NUMERO_TARJETA_PROPIEDAD: datos.numeroTarjetaPropiedad || '',
     USA_BICICLETERO: datos.usaBiciletero || '',
     ESPACIO_ASIGNADO: datos.espacioAsignado || '',
+    URL_FOTO_BICI: datos.urlFotoBici || '',
+    URL_FOTO_TARJETA_PROPIEDAD: datos.urlFotoTarjetaPropiedad || '',
     OBSERVACIONES: datos.observaciones || '',
     ESTADO: 'ACTIVO'
   });
@@ -222,8 +227,11 @@ function crearMascota(datos) {
     RAZA: datos.raza || '',
     SEXO: datos.sexo || '',
     EDAD_APROXIMADA: datos.edadAproximada || '',
-    DOCUMENTACION: datos.documentacion || '',
-    URL_DOCUMENTO: datos.urlDocumento || '',
+    URL_CARNET_VACUNAS: datos.urlCarnetVacunas || '',
+    URL_FOTO_MASCOTA: datos.urlFotoMascota || '',
+    URL_POLIZA: datos.urlPoliza || '',
+    URL_CHIP: datos.urlChip || '',
+    OBSERVACIONES: datos.observaciones || '',
     ESTADO: 'ACTIVO',
     FECHA_CREACION: ahora,
     FECHA_ACTUALIZACION: ahora
@@ -275,6 +283,7 @@ function crearContactoEmergencia(datos) {
     PARENTESCO: datos.parentesco || '',
     TELEFONO_PRINCIPAL: datos.telefonoPrincipal || '',
     TELEFONO_ALTERNATIVO: datos.telefonoAlternativo || '',
+    CORREO: datos.correo || '',
     CIUDAD: datos.ciudad || '',
     ESTADO: 'ACTIVO'
   });
@@ -289,8 +298,8 @@ function crearArrendamiento(datos) {
     NOMBRE_ARRENDATARIO: datos.nombreArrendatario || '',
     TELEFONO: datos.telefono || '',
     CORREO: datos.correo || '',
-    FECHA_INICIO: datos.fechaInicio || '',
-    FECHA_FIN: datos.fechaFin || '',
+    FECHA_INICIO: '',
+    FECHA_FIN: '',
     INMOBILIARIA: datos.inmobiliaria || '',
     ESTADO: 'ACTIVO',
     OBSERVACIONES: datos.observaciones || ''
@@ -357,11 +366,8 @@ function crearUnidad(datos) {
   insertarFila(CONFIG.HOJAS.UNIDADES, {
     ID_UNIDAD: id,
     ID_COPROPIEDAD: datos.idCopropiedad || CONFIG.ID_COPROPIEDAD_DEFAULT,
-    BLOQUE: datos.bloque || '',
-    TORRE: datos.torre || '',
-    PISO: datos.piso || '',
     APARTAMENTO: datos.apartamento || '',
-    TIPO_UNIDAD: datos.tipoUnidad || '',
+    TIPO_UNIDAD: 'Apartamento',
     AREA: datos.area || '',
     COEFICIENTE: datos.coeficiente || '',
     ESTADO_OCUPACION: datos.estadoOcupacion || '',
@@ -372,7 +378,7 @@ function crearUnidad(datos) {
     FECHA_CREACION: ahora,
     FECHA_ACTUALIZACION: ahora
   });
-  registrarIndiceDuplicado('APTO_TORRE', (datos.torre || '') + '-' + (datos.apartamento || ''));
+  registrarIndiceDuplicado('APTO', String(datos.apartamento || ''));
   return { idUnidad: id, codigoCenso: codigoCenso, tokenActualizacion: token };
 }
 
@@ -386,11 +392,10 @@ function obtenerUnidad(idUnidad) {
   return null;
 }
 
-function buscarUnidadPorTorreApto(torre, apto) {
+function buscarUnidadPorApto(apto) {
   var filas = obtenerFilasComoObjetos(CONFIG.HOJAS.UNIDADES);
   for (var i = 0; i < filas.length; i++) {
-    if (String(filas[i].TORRE || '').trim() === String(torre || '').trim() &&
-        String(filas[i].APARTAMENTO || '').trim() === String(apto || '').trim()) {
+    if (String(filas[i].APARTAMENTO) === String(apto)) {
       return filas[i];
     }
   }
@@ -402,33 +407,34 @@ function listarUnidades() {
 }
 
 /**
- * Reparación única de la hoja UNIDADES. Ejecutar manualmente desde el editor de
- * Apps Script (después de hacer una copia de la hoja).
+ * Reparación única de la hoja UNIDADES. Ejecutar una sola vez (menú "Censo Terra 93"),
+ * después de hacer una copia de la hoja.
  *
- * Caso que corrige: se borraron las columnas BLOQUE, TORRE y PISO de la hoja pero el
- * código siguió escribiendo 16 columnas, dejando filas desalineadas respecto a los
- * encabezados. La función reconstruye la hoja con los 16 encabezados de CONFIG:
- *  - filas "formato antiguo" (sin BLOQUE/TORRE/PISO): ESTADO_REGISTRO queda en el índice 7
- *    -> se insertan 3 celdas vacías después de ID_COPROPIEDAD.
- *  - filas "formato nuevo" (16 columnas): ESTADO_REGISTRO en el índice 10 -> se dejan igual.
- * BLOQUE/TORRE/PISO de las filas antiguas no se pueden recuperar desde esta hoja.
+ * Caso que corrige: BLOQUE, TORRE y PISO se quitaron de la hoja (el formulario ya no los
+ * pide) pero el código siguió escribiendo 16 columnas, dejando filas desalineadas.
+ * Deja todas las filas en el formato vigente de 13 columnas (CONFIG.ENCABEZADOS.UNIDADES):
+ *  - filas correctas (ESTADO_REGISTRO en el índice 7): no se tocan.
+ *  - filas desalineadas (ESTADO_REGISTRO en el índice 10, formato de 16 columnas): se
+ *    eliminan las 3 columnas BLOQUE/TORRE/PISO, que estaban vacías.
  */
 function repararHojaUnidades() {
   var hoja = obtenerHoja(CONFIG.HOJAS.UNIDADES);
   var encabezados = CONFIG.ENCABEZADOS.UNIDADES;
-  var ultimaFila = hoja.getLastRow();
-  var ultimaColumna = Math.max(hoja.getLastColumn(), encabezados.length);
-  var filas = ultimaFila > 1 ? hoja.getRange(2, 1, ultimaFila - 1, ultimaColumna).getValues() : [];
   var idxRegistro = encabezados.indexOf('ESTADO_REGISTRO');
-  var idxRegistroAntiguo = idxRegistro - 3;
+  var idxRegistro16 = idxRegistro + 3;
+  var ultimaFila = hoja.getLastRow();
+  var ultimaColumna = Math.max(hoja.getLastColumn(), encabezados.length + 3);
+  var filas = ultimaFila > 1 ? hoja.getRange(2, 1, ultimaFila - 1, ultimaColumna).getValues() : [];
   var sinClasificar = [];
+  var corregidas = 0;
 
   var normalizadas = filas.map(function (fila, i) {
     var nueva;
     if (fila[idxRegistro] === 'CENSADO' || fila[idxRegistro] === 'PENDIENTE') {
       nueva = fila.slice(0, encabezados.length);
-    } else if (fila[idxRegistroAntiguo] === 'CENSADO' || fila[idxRegistroAntiguo] === 'PENDIENTE') {
-      nueva = fila.slice(0, 2).concat(['', '', ''], fila.slice(2, encabezados.length - 3));
+    } else if (fila[idxRegistro16] === 'CENSADO' || fila[idxRegistro16] === 'PENDIENTE') {
+      nueva = fila.slice(0, 2).concat(fila.slice(5, 5 + encabezados.length - 2));
+      corregidas++;
     } else {
       sinClasificar.push(i + 2);
       nueva = fila.slice(0, encabezados.length);
@@ -438,11 +444,10 @@ function repararHojaUnidades() {
   });
 
   hoja.getRange(1, 1, Math.max(ultimaFila, 1), ultimaColumna).clearContent();
-  var rango = hoja.getRange(1, 1, 1, encabezados.length);
-  rango.setValues([encabezados]);
+  hoja.getRange(1, 1, 1, encabezados.length).setValues([encabezados]);
   if (normalizadas.length > 0) {
     hoja.getRange(2, 1, normalizadas.length, encabezados.length).setValues(normalizadas);
   }
-  return 'Hoja UNIDADES reparada. Filas: ' + normalizadas.length +
+  return 'Hoja UNIDADES reparada. Filas: ' + normalizadas.length + ', corregidas: ' + corregidas +
     (sinClasificar.length ? '. Revisar manualmente las filas: ' + sinClasificar.join(', ') : '.');
 }
