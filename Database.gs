@@ -407,7 +407,7 @@ function listarUnidades() {
 }
 
 /**
- * Reparación única de la hoja UNIDADES. Ejecutar una sola vez (menú "Censo Terra 93"),
+ * Reparación única de la hoja UNIDADES. Ejecutar una sola vez desde el editor de Apps Script,
  * después de hacer una copia de la hoja.
  *
  * Caso que corrige: BLOQUE, TORRE y PISO se quitaron de la hoja (el formulario ya no los
@@ -448,6 +448,8 @@ function repararHojaUnidades() {
   if (normalizadas.length > 0) {
     hoja.getRange(2, 1, normalizadas.length, encabezados.length).setValues(normalizadas);
   }
-  return 'Hoja UNIDADES reparada. Filas: ' + normalizadas.length + ', corregidas: ' + corregidas +
+  var resumen = 'Hoja UNIDADES reparada. Filas: ' + normalizadas.length + ', corregidas: ' + corregidas +
     (sinClasificar.length ? '. Revisar manualmente las filas: ' + sinClasificar.join(', ') : '.');
+  Logger.log(resumen);
+  return resumen;
 }
