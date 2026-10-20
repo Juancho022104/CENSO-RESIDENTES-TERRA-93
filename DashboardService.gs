@@ -152,35 +152,13 @@ function calcularCalidadCenso(idUnidad) {
 }
 
 /**
- * Menú en la hoja de cálculo para ejecutar tareas de mantenimiento sin abrir el editor.
- */
-function onOpen() {
-  SpreadsheetApp.getUi()
-    .createMenu('Censo Terra 93')
-    .addItem('Generar / actualizar dashboard', 'generarDashboardEnHoja')
-    .addSeparator()
-    .addItem('Reparar hoja UNIDADES (una sola vez)', 'repararHojaUnidadesDesdeMenu')
-    .addToUi();
-}
-
-function repararHojaUnidadesDesdeMenu() {
-  var ui = SpreadsheetApp.getUi();
-  var respuesta = ui.alert('Reparar UNIDADES',
-    'Se reescribirá la hoja UNIDADES con los 16 encabezados originales. Haga primero una copia de la hoja. ¿Continuar?',
-    ui.ButtonSet.YES_NO);
-  if (respuesta === ui.Button.YES) {
-    ui.alert(repararHojaUnidades());
-  }
-}
-
-/**
  * Genera (o regenera) la hoja DASHBOARD con los indicadores y gráficos calculados
- * a partir de los datos ya registrados. Se ejecuta desde el menú "Censo Terra 93"
- * o desde el editor de Apps Script; solo la ve quien tenga acceso a la hoja.
+ * a partir de los datos ya registrados. Ejecutar desde el editor de Apps Script
+ * (el script es independiente, no hay menú en el Sheet); solo la ve quien tenga acceso a la hoja.
  */
 function generarDashboardEnHoja() {
   var d = obtenerDashboard();
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = obtenerSpreadsheet();
   var hoja = ss.getSheetByName('DASHBOARD') || ss.insertSheet('DASHBOARD');
   hoja.clear();
   hoja.getCharts().forEach(function (g) { hoja.removeChart(g); });
