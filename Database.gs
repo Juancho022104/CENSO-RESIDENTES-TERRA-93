@@ -50,13 +50,31 @@ function obtenerFilasComoObjetos(nombreHoja) {
  */
 function insertarFila(nombreHoja, objetoFila) {
   var hoja = obtenerHoja(nombreHoja);
-  var encabezados = CONFIG.ENCABEZADOS[nombreHoja];
+  var encabezados = obtenerEncabezadosReales(hoja, nombreHoja);
   var fila = encabezados.map(function (encabezado) {
     var valor = objetoFila[encabezado];
     return valor === undefined || valor === null ? '' : sanitizarValor(valor);
   });
+  // Se escribe en la primera fila libre a partir de la columna A con el ancho real
+  // de los encabezados (appendRow ya hace esto, pero así queda explícito el mapeo).
   hoja.appendRow(fila);
   return fila;
+}
+
+/**
+ * Lee los encabezados reales de la fila 1 de la hoja. Así el orden de las columnas
+ * lo manda la hoja y no el código: si alguien inserta, borra o mueve columnas,
+ * los datos nuevos siguen cayendo bajo el encabezado correcto.
+ * Si la fila 1 está vacía, se usa el orden definido en CONFIG.
+ */
+function obtenerEncabezadosReales(hoja, nombreHoja) {
+  var porDefecto = CONFIG.ENCABEZADOS[nombreHoja] || [];
+  var ultimaColumna = hoja.getLastColumn();
+  if (ultimaColumna < 1) return porDefecto;
+  var reales = hoja.getRange(1, 1, 1, ultimaColumna).getValues()[0]
+    .map(function (h) { return String(h).trim(); });
+  while (reales.length > 0 && reales[reales.length - 1] === '') reales.pop();
+  return reales.length > 0 ? reales : porDefecto;
 }
 
 /**
@@ -66,7 +84,7 @@ function actualizarFilaPorId(nombreHoja, idValor, cambios) {
   var hoja = obtenerHoja(nombreHoja);
   var ultimaFila = hoja.getLastRow();
   if (ultimaFila < 2) return false;
-  var encabezados = CONFIG.ENCABEZADOS[nombreHoja];
+  var encabezados = obtenerEncabezadosReales(hoja, nombreHoja);
   var datos = hoja.getRange(1, 1, ultimaFila, encabezados.length).getValues();
 
   for (var i = 1; i < datos.length; i++) {
@@ -348,9 +366,6 @@ function crearUnidad(datos) {
   insertarFila(CONFIG.HOJAS.UNIDADES, {
     ID_UNIDAD: id,
     ID_COPROPIEDAD: datos.idCopropiedad || CONFIG.ID_COPROPIEDAD_DEFAULT,
-    BLOQUE: datos.bloque || '',
-    TORRE: datos.torre || '',
-    PISO: datos.piso || '',
     APARTAMENTO: datos.apartamento || '',
     TIPO_UNIDAD: 'Apartamento',
     AREA: datos.area || '',
@@ -389,4 +404,50 @@ function buscarUnidadPorApto(apto) {
 
 function listarUnidades() {
   return obtenerFilasComoObjetos(CONFIG.HOJAS.UNIDADES);
+}
+
+/**
+ * Reparación única de la hoja UNIDADES. Ejecutar una sola vez (menú "Censo Terra 93"),
+ * después de hacer una copia de la hoja.
+ *
+ * Caso que corrige: BLOQUE, TORRE y PISO se quitaron de la hoja (el formulario ya no los
+ * pide) pero el código siguió escribiendo 16 columnas, dejando filas desalineadas.
+ * Deja todas las filas en el formato vigente de 13 columnas (CONFIG.ENCABEZADOS.UNIDADES):
+ *  - filas correctas (ESTADO_REGISTRO en el índice 7): no se tocan.
+ *  - filas desalineadas (ESTADO_REGISTRO en el índice 10, formato de 16 columnas): se
+ *    eliminan las 3 columnas BLOQUE/TORRE/PISO, que estaban vacías.
+ */
+function repararHojaUnidades() {
+  var hoja = obtenerHoja(CONFIG.HOJAS.UNIDADES);
+  var encabezados = CONFIG.ENCABEZADOS.UNIDADES;
+  var idxRegistro = encabezados.indexOf('ESTADO_REGISTRO');
+  var idxRegistro16 = idxRegistro + 3;
+  var ultimaFila = hoja.getLastRow();
+  var ultimaColumna = Math.max(hoja.getLastColumn(), encabezados.length + 3);
+  var filas = ultimaFila > 1 ? hoja.getRange(2, 1, ultimaFila - 1, ultimaColumna).getValues() : [];
+  var sinClasificar = [];
+  var corregidas = 0;
+
+  var normalizadas = filas.map(function (fila, i) {
+    var nueva;
+    if (fila[idxRegistro] === 'CENSADO' || fila[idxRegistro] === 'PENDIENTE') {
+      nueva = fila.slice(0, encabezados.length);
+    } else if (fila[idxRegistro16] === 'CENSADO' || fila[idxRegistro16] === 'PENDIENTE') {
+      nueva = fila.slice(0, 2).concat(fila.slice(5, 5 + encabezados.length - 2));
+      corregidas++;
+    } else {
+      sinClasificar.push(i + 2);
+      nueva = fila.slice(0, encabezados.length);
+    }
+    while (nueva.length < encabezados.length) nueva.push('');
+    return nueva;
+  });
+
+  hoja.getRange(1, 1, Math.max(ultimaFila, 1), ultimaColumna).clearContent();
+  hoja.getRange(1, 1, 1, encabezados.length).setValues([encabezados]);
+  if (normalizadas.length > 0) {
+    hoja.getRange(2, 1, normalizadas.length, encabezados.length).setValues(normalizadas);
+  }
+  return 'Hoja UNIDADES reparada. Filas: ' + normalizadas.length + ', corregidas: ' + corregidas +
+    (sinClasificar.length ? '. Revisar manualmente las filas: ' + sinClasificar.join(', ') : '.');
 }

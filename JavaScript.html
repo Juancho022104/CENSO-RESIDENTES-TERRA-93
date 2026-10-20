@@ -645,14 +645,42 @@
   // Envío final
   // ---------------------------------------------------------------------
 
+  // Identificador del envío: se genera una vez y se reutiliza en los reintentos, de modo
+  // que el servidor reconozca un reenvío y no duplique el registro.
+  var idSolicitudEnvio = null;
+  var envioEnCurso = false;
+  var TIEMPO_MAXIMO_ENVIO_MS = 60000;
+
+  function generarIdSolicitud() {
+    return 'S' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+  }
+
   function finalizarCenso() {
+    if (envioEnCurso) return;
     if (!validarSeccionActual()) return;
 
+    limpiarMensajes();
     var payload = recolectarPayload();
+    if (!idSolicitudEnvio) idSolicitudEnvio = generarIdSolicitud();
+    payload.idSolicitud = idSolicitudEnvio;
+
+    envioEnCurso = true;
     mostrarCarga(true);
+
+    // Si el servidor tarda demasiado o la conexión se pierde sin avisar, ningún handler
+    // se ejecuta y la pantalla quedaría congelada. Este temporizador la libera.
+    var temporizador = setTimeout(function () {
+      if (!envioEnCurso) return;
+      envioEnCurso = false;
+      mostrarCarga(false);
+      mostrarMensaje('El envío está tardando más de lo normal. Es posible que ya se haya registrado. ' +
+        'Presione "Finalizar" de nuevo: es seguro y no duplicará su registro.', 'advertencia');
+    }, TIEMPO_MAXIMO_ENVIO_MS);
 
     google.script.run
       .withSuccessHandler(function (respuesta) {
+        clearTimeout(temporizador);
+        envioEnCurso = false;
         mostrarCarga(false);
         if (respuesta && respuesta.exito) {
           borrarBorradorLocal();
@@ -662,8 +690,11 @@
         }
       })
       .withFailureHandler(function () {
+        clearTimeout(temporizador);
+        envioEnCurso = false;
         mostrarCarga(false);
-        mostrarMensaje('Ocurrió un problema de conexión. Verifique su internet e intente nuevamente.', 'error');
+        mostrarMensaje('Ocurrió un problema de conexión y no pudimos confirmar el envío. ' +
+          'Presione "Finalizar" de nuevo: es seguro y no duplicará su registro.', 'error');
       })
       .guardarCenso(payload);
   }
